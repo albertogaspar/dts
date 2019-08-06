@@ -10,7 +10,7 @@ Specifically a sliding window approach is used where each model is given a time 
 to output a prediction for the following n<sub>O</sub> timesteps (see Figure below).
 
 <p align="center">
-  <img source="./images/notation.png"/>
+  <img src="./images/notation.png"/>
 </p>
 
 
@@ -24,7 +24,6 @@ Included architetures are:
   n<sub>O</sub> is obtained.
 - Seq2Seq:
   ![](./images/seq2seq.png)
-  
   different training procedure are available (see [Professor Forcing: A New Algorithm for Training Recurrent Networks](https://arxiv.org/abs/1610.09038) for more details)
   - Teacher Forcing: 
   
