@@ -10,7 +10,7 @@ Specifically a sliding window approach is used where each model is given a time 
 to output a prediction for the following n<sub>O</sub> timesteps (see Figure below).
 
 <p align="center">
-  <img src="./images/notation.png"/>
+  <img src="./images/notation.png" width="50%" height="50%"/>
 </p>
 
 
