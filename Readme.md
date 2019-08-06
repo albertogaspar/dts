@@ -6,14 +6,18 @@ A Keras library for multi-step time-series forecasting.
 # What it contains
 The package includes several deep learning architectures that can be used for multi step-time series forecasting. 
 The package provides also several utilities to cast the forecasting problem into a supervised machine learning problem. 
-Specifically a sliding window approach is used where each model is given a time window of size $n_T$ and asked to output a prediction for the following $n_O$ timesteps (see Figure below)
+Specifically a sliding window approach is used where each model is given a time window of size n<sub>T</sub> and asked 
+to output a prediction for the following n<sub>O</sub> timesteps (see Figure below).
 ![](./images/notation.png)
 
 Included architetures are:
 - Feed Forward networks with and without residual connections.
 - Recurrent Neural Networks (Elmann, LSTM, GRU) with different trainig procedure:
-  - MIMO: a Dense network is used to map the last state of the RNN to the output space 
-  - Recurrent:
+  - MIMO: a Dense Network is used to map the last state of the RNN to the output space of size n<sub>O</sub>. 
+  The training and inference procedures are the same 
+  - Recurrent: The RNN is trained to predict the next step, i.e. the output space during training has size 1. During inference, 
+  the network is fed with (part of) the input plus it's own predictions in a recurrent fashion until an ouput vector of length 
+  n<sub>O</sub> is obtained.
 - Seq2Seq:
   ![](./images/seq2seq.png)
   different training procedure are available (see [Professor Forcing: A New Algorithm for Training Recurrent Networks](https://arxiv.org/abs/1610.09038) for more details)
