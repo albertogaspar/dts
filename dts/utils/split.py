@@ -22,7 +22,7 @@ def simple_split(X, train_len=None, test_len=None, valid_len=None):
     if test_len is None:
         raise ValueError('test_len cannot be None.')
     if train_len is None:
-        train_len = X.shape[0] - test_len - 1
+        train_len = X.shape[0] - test_len
         valid_len = 0
     if valid_len is None:
         valid_len = X.shape[0] - train_len - test_len
@@ -31,7 +31,7 @@ def simple_split(X, train_len=None, test_len=None, valid_len=None):
            X[train_len+valid_len:]
 
 
-def multiple_splits(X, train_len=None, test_len=None, valid_len=None, allow_multiple_split=False):
+def multiple_splits(X, train_len=None, test_len=None, valid_len=None):
         """
         Split the data in train-test-validation using a window approach.
         Each window has length train_len+test_len+valid_len and the total number of windows is
@@ -46,20 +46,17 @@ def multiple_splits(X, train_len=None, test_len=None, valid_len=None, allow_mult
             Length in number of data points (measurements) for testing
         :param valid_len: int
             Length in number of data points (measurements) for validation
-        :param allow_multiple_split:
-            If True, split the data in groups of len (train_len + valid_len + test_len).
-            For allow_multiple_split to be True train_len should not be None.
         :return: list
             train: numpy.array, shape=(M, train_len, n_features)
             validation: numpy.array, shape=(M, valid_len, n_features)
             test: numpy.array, shape=(M, test_len, n_features)
         """
-        if train_len is None and allow_multiple_split:
-            raise ValueError('When allow_multiple_split is True train_len cannot be None.')
+        if train_len is None:
+            raise ValueError('train_len cannot be None.')
         if test_len is None:
             raise ValueError('test_len cannot be None.')
         if train_len is None:
-            train_len = X.shape[0] - test_len - 1
+            train_len = X.shape[0] - test_len
             valid_len = 0
         if valid_len is None:
             valid_len = X.shape[0] - train_len - test_len

@@ -7,7 +7,7 @@ from dts import config
 
 def save_data(data, split_type=None, exogenous_vars=False, is_train=False, dataset_name=None):
     """
-    Save all relevant information as a numpy array
+    Save all relevant information.
     :param data: dict having as keys: 'train', 'test', 'scaler', 'trend'.
                  Use load_data method of one of the datasets in dts.dataset to generate it.
     :param split_type: 'simple', 'multi', 'default'

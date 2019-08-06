@@ -1,11 +1,8 @@
 import pandas as pd
-import os
 from dts import config, logger
 from dts.datasets.utils import *
-from dts.utils.utils import set_datetime_index
 from dts.utils.split import *
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
-from sklearn.externals import joblib
 from datetime import datetime
 
 NAME = 'gefcom'
@@ -32,6 +29,10 @@ def load_raw_dataset():
 
 
 def load_dataset():
+    """
+    Load an already cleaned version of the dataset
+    :return:
+    """
     df = pd.read_csv(os.path.join(config['data'], 'GEFCom2014/Load/gefcom2014.csv'))
     df[DATETIME] = df[DATETIME].apply(lambda x: datetime.strptime(x, '%Y-%m-%d %H:%M:%S'))
     return df
@@ -55,10 +56,11 @@ def load_data(fill_nan=None,
         -mean: fill NaN value at index i  with the mean value over all dataset at the same hour,minute
         -median: fill NaN value at index i  with the median value over all dataset at the same hour,minute
         -drop: drop all rows with missing values
-    :param preprocessing: if True, standardize features using standrad scaler
+    :param preprocessing: if True, standardize features using standard scaler
     :param detrend: if True, use train weekly statistics to detrend the time series.
         (WORKS ONLY FOR split_type=simple or split_type=default when is_train=False)
-    :param exogenous_vars: if True, add exogenous features to the input data (date/time feature + holiday feature)
+    :param exogenous_vars: if True, add exogenous features to the input data
+        (temperatures + date/time feature + holiday feature)
     :param train_len: length of the train dataset
     :param test_len: length of the test set
     :param valid_len: length of the validation set
@@ -198,9 +200,11 @@ def _add_holidays(df):
 def transform(X, scaler=None, scaler_type=None):
     """
     Apply standard scaling to the input variables
-    :param X:
+    :param X: the data
     :param scaler: the scaler to use, None if StandardScaler has to be used
     :return:
+        scaler used
+        X transformed using scaler
     """
     if scaler is None:
         if scaler_type == 'minmax':
@@ -212,6 +216,14 @@ def transform(X, scaler=None, scaler_type=None):
 
 
 def inverse_transform(X, scaler, trend=None):
+    """
+    :param X: the data
+    :param scaler: the scaler that have been used for transforming X
+    :param trend: the trebd values that has been removed from X. None if no detrending has been used.
+        It has to be the same dim. as X.
+    :return:
+        X with trend adds back and de-standardized
+    """
     X = X.astype(np.float32)
     X = scaler.inverse_transform(X)
     if trend is not None:
@@ -222,7 +234,7 @@ def inverse_transform(X, scaler, trend=None):
 def apply_detrend(df, train_len):
     """
     Perform detrending on a time series by subtrating from each value of the dataset
-    the average value computed over the training dataset for each hour/minute/weekdays
+    the average value computed over the training dataset for each hour/weekday
     :param df: the dataset
     :param test_len: test length,
     :return:
@@ -246,33 +258,6 @@ def apply_detrend(df, train_len):
     return df, np.float32(df_copy['trend'].values[:-1])
 
 
-# if __name__ == '__main__':
-    # from matplotlib import pyplot as plt
-    # df = load_dataset()
-    #
-    # exogenous = False
-    # detrend = False
-    # split_type = 'default'
-    # for is_train in [True, False]:
-    #     data = load_data(fill_nan='median',
-    #                      preprocessing=True,
-    #                      split_type=split_type,
-    #                      use_prebuilt=False,
-    #                      is_train=is_train,
-    #                      detrend=detrend)
-    #     scaler, train, test, trend = data['scaler'], data['train'], data['test'], data['trend']
-    #
-    #     # plt.plot(df[TARGET].values)
-    #     # plt.plot(inverse_transform(train[:,:,0], scaler=scaler, trend=data['trend'][0])[0])
-    #     # plt.show()
-    #
-    #     save_data(data=data, split_type=split_type, exogenous_vars=exogenous, is_train=is_train, dataset_name=NAME)
-    #     x = load_prebuilt_data(split_type=split_type, exogenous_vars=exogenous, is_train=is_train, detrend=detrend,
-    #                            dataset_name=NAME)
-    #     for k,v in x.items():
-    #         try:
-    #             print(k, v.shape)
-    #         except:
-    #             print(k)
+
 
 
