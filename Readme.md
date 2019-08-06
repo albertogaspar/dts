@@ -27,7 +27,7 @@ Included architetures are:
   - [Conditional TCN](https://arxiv.org/abs/1703.04691)
   
 The [Sacred](https://github.com/IDSIA/sacred) library is used to keep track of different experiments and allow their reproducibility. 
-The installation of [MongoDB](https://www.mongodb.com/) is ot mandatory but highly recommended.
+The installation of [MongoDB](https://www.mongodb.com/) is not mandatory but highly recommended.
 
 # Datasets
 - **Individual household electric power consumption Data Set**: Measurements of electric power consumption in _one household_ with a one-minute sampling rate over a period of almost 4 years.
