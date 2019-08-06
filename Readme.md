@@ -10,7 +10,7 @@ Specifically a sliding window approach is used where each model is given a time 
 to output a prediction for the following n<sub>O</sub> timesteps (see Figure below).
 
 <p align="center">
-  <img src="./images/notation.png" width="50%" height="50%"/>
+  <img src="./images/notation.png" width="70%" height="70%"/>
 </p>
 
 
@@ -23,19 +23,25 @@ Included architetures are:
   the network is fed with (part of) the input plus it's own predictions in a recurrent fashion until an ouput vector of length 
   n<sub>O</sub> is obtained.
 - Seq2Seq:
-  ![](./images/seq2seq.png)
+
+<p align="center">
+  <img src="./images/seq2seq.png" width="60%" height="60%"/>
+</p>
+
   different training procedure are available (see [Professor Forcing: A New Algorithm for Training Recurrent Networks](https://arxiv.org/abs/1610.09038) for more details)
-  - Teacher Forcing: 
+  - Teacher Forcing and Self-Genearted Samples:
   
-  ![](./images/S2S_TF.png)
-  - Self-Generated: 
-  
-  ![](./images/S2S_SG.png)
+<p align="center">
+  <img src="./images/seq2seqTFSG.png" width="60%" height="60%"/>
+</p>
+
   - TODO: [Professor Forcing](https://arxiv.org/abs/1610.09038), [Scheduled Sampling](https://arxiv.org/abs/1506.03099) 
 - Temporal Convolutional Neural Networks:
     
-    ![](./images/TCN.png)
-  
+<p align="center">
+  <img src="./images/TCN.png" width="70%" height="70%"/>
+</p>
+
   - [Wavenet](https://arxiv.org/abs/1609.03499)
   - [TCN](https://arxiv.org/abs/1803.01271)
   - [Conditional TCN](https://arxiv.org/abs/1703.04691)
