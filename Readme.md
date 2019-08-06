@@ -8,7 +8,11 @@ The package includes several deep learning architectures that can be used for mu
 The package provides also several utilities to cast the forecasting problem into a supervised machine learning problem. 
 Specifically a sliding window approach is used where each model is given a time window of size n<sub>T</sub> and asked 
 to output a prediction for the following n<sub>O</sub> timesteps (see Figure below).
-![](./images/notation.png)
+
+<p align="center">
+  <img source="./images/notation.png"/>
+</p>
+
 
 Included architetures are:
 - Feed Forward networks with and without residual connections.
@@ -20,12 +24,19 @@ Included architetures are:
   n<sub>O</sub> is obtained.
 - Seq2Seq:
   ![](./images/seq2seq.png)
+  
   different training procedure are available (see [Professor Forcing: A New Algorithm for Training Recurrent Networks](https://arxiv.org/abs/1610.09038) for more details)
-  - Teacher Forcing: ![](./images/S2S_TF.png)
-  - Self-Generated: ![](./images/S2S_SG.png)
+  - Teacher Forcing: 
+  
+  ![](./images/S2S_TF.png)
+  - Self-Generated: 
+  
+  ![](./images/S2S_SG.png)
   - TODO: [Professor Forcing](https://arxiv.org/abs/1610.09038), [Scheduled Sampling](https://arxiv.org/abs/1506.03099) 
 - Temporal Convolutional Neural Networks:
+    
     ![](./images/TCN.png)
+  
   - [Wavenet](https://arxiv.org/abs/1609.03499)
   - [TCN](https://arxiv.org/abs/1803.01271)
   - [Conditional TCN](https://arxiv.org/abs/1703.04691)
