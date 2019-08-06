@@ -1,0 +1,7 @@
+config: '/dts/config/'
+data: '/dts/data/'
+weights: '/dts/weights/'
+imgs: '/dts/imgs/'
+logs: '/dts/logs/'
+ckpts: '/dts/ckpts/'
+db: 'DTS'
