@@ -66,36 +66,46 @@ To see a working example on one of this datasets check `dts.examples`.
 
 #### Available architectures
 Included architetures are:
-- Feed Forward networks with and without residual connections.
 - **Recurrent Neural Networks** (Elmann, LSTM, GRU) with different trainig procedure:
-  - MIMO: a Dense Network is used to map the last state of the RNN to the output space of size n<sub>O</sub>. 
-  The training and inference procedures are the same 
-  - Recurrent: The RNN is trained to predict the next step, i.e. the output space during training has size 1. During inference, 
-  the network is fed with (part of) the input plus it's own predictions in a recurrent fashion until an ouput vector of length 
-  n<sub>O</sub> is obtained.
+  - _MIMO_: a Dense Network is used to map the last state of the RNN to the output space of size n<sub>O</sub>. 
+    The training and inference procedures are the same.
+    
+    <p align="center">
+      <img src="./images/rnn_MIMO.png" width="60%" height="60%"/>
+    </p>
+
+  - _Recurrent_: The RNN is trained to predict the next step, i.e. the output space during training has size 1. During inference, 
+    the network is fed with (part of) the input plus it's own predictions in a recurrent fashion until an ouput vector of length 
+    n<sub>O</sub> is obtained.
+  
+    <p align="center">
+      <img src="./images/rnn_rec.png" width="60%" height="60%"/>
+    </p>
+  
 - **Seq2Seq**:
 
-<p align="center">
-  <img src="./images/seq2seq.png" width="60%" height="60%"/>
-</p>
+    <p align="center">
+      <img src="./images/seq2seq.png" width="60%" height="60%"/>
+    </p>
 
-  different training procedure are available (see [Professor Forcing: A New Algorithm for Training Recurrent Networks](https://arxiv.org/abs/1610.09038) for more details)
-  - Teacher Forcing and Self-Genearted Samples:
-  
-<p align="center">
-  <img src="./images/seq2seqTFSG.png" width="60%" height="60%"/>
-</p>
-
-  - TODO: [Professor Forcing](https://arxiv.org/abs/1610.09038), [Scheduled Sampling](https://arxiv.org/abs/1506.03099) 
+    different training procedure are available (see [Professor Forcing: A New Algorithm for Training Recurrent Networks](https://arxiv.org/abs/1610.09038) for more details)
+    - _Teacher Forcing_ and _Self-Generated Samples_:
+      
+    <p align="center">
+      <img src="./images/seq2seqTFSG.png" width="60%" height="60%"/>
+    </p>
+    
 - **Temporal Convolutional Neural Networks**:
     
-<p align="center">
-  <img src="./images/TCN.png" width="70%" height="70%"/>
-</p>
+    <p align="center">
+      <img src="./images/TCN.png" width="70%" height="70%"/>
+    </p>
 
   - [Wavenet](https://arxiv.org/abs/1609.03499)
   - [TCN](https://arxiv.org/abs/1803.01271)
   - [Conditional TCN](https://arxiv.org/abs/1703.04691)
+
+- Feed Forward networks with and without residual connections (both MIMO and Rec)
 
 **Train a model**:
 
