@@ -105,7 +105,8 @@ Included architetures are:
   - [TCN](https://arxiv.org/abs/1803.01271)
   - [Conditional TCN](https://arxiv.org/abs/1703.04691)
 
-- Feed Forward networks with and without residual connections (both MIMO and Rec)
+- **Feedforward Neural Networks** (both MIMO and Recurrent)
+- **ResNet** (both MIMO and Recurrent): a feedforward neural network with residual connections.
 
 **Train a model**:
 
@@ -167,7 +168,7 @@ The example refers to a completed experiment of a TCN model trained on the Indiv
 (for brevity, 'uci'):
 
 <p align="center">
-  <img src="./images/sacred.gif" width="70%" height="70%"/>
+  <img src="./images/sacred.gif" width="50%" height="50%"/>
 </p>
 
 When MongoDB is used as an Observer, the collected information for an experiment is stored in a document. 
