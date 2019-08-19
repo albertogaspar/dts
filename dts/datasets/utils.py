@@ -39,8 +39,9 @@ def load_prebuilt_data(split_type=None, exogenous_vars=False, detrend=False, is_
     """
     Load one of the prebuilt dataset from disk.
     :param split_type: 'simple', 'multi', 'default'
-    :param exogenous_vars:
-    :param is_train:
+    :param exogenous_vars: True if exogenous vars have been used
+    :param is_train: True if training
+    :param dataset_name: 'uci', 'gefcom2014'
     :return: a dict having the following (key, value) pairs:
         - train = training dataset, np.array of shape()
         - test = test dataset, np.array of shape()

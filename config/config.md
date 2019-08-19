@@ -1,9 +1,9 @@
 ## How to write a config file
 
-When you want to try different values for the hyperparamters of your model you should write a yaml file like the one 
-included in this folder. 
+When you want to try different values for the hyperparamters of your model 
+(i.e., when you run the experiment using the --grid_search flag) you should write a
+yaml file that has values in a list like in the example below.
 
-Example:
 ```yaml
 train: [False, True]
 dataset: ['uci']

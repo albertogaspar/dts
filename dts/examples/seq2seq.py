@@ -1,86 +1,30 @@
-from keras.callbacks import EarlyStopping, LambdaCallback
+"""
+Main script for training and evaluating a seq2seq on a multi-step forecasting task.
+You can chose bewteen:
+    - Running a simple experiment
+    - Running multiple experiments trying out diffrent combinations of hyperparamters (grid-search)
+"""
 
+from keras.callbacks import EarlyStopping
 from dts import config
 from dts.datasets import uci_single_households
 from dts.datasets import gefcom2014
 from dts import logger
 from dts.utils.plot import plot
+from dts.utils.decorators import f_main
 from dts.utils import metrics
 from dts.utils import run_grid_search, run_single_experiment
-from dts.utils import DTSExperiment, log_metrics
+from dts.utils import DTSExperiment, log_metrics, get_args
 from dts.utils.split import *
 from dts.models.Seq2Seq import *
-from argparse import ArgumentParser
-import yaml
 import time
 import os
 
 
-def get_args():
-    parser = ArgumentParser()
-    parser.add_argument('--train', action='store_true', help='Training FLAG. Use SACRED args if True')
-    parser.add_argument("--dataset", type=str, default='gefcom', help='Dataset to be used: uci, gefcom')
-    parser.add_argument('--exogenous', action='store_true', help='Add exogenous features to the data')
-    parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--cell", type=str, default='rnn', help='RNN cell to be used: rnn (Elmann), lstm, gru')
-    parser.add_argument('--teacher_forcing', action='store_true',
-                        help='Multi step forecast strategy. If True use teacher forcing else use self-generated mode')
-    parser.add_argument("--learning_rate", type=float, default=1e-3)
-    parser.add_argument("--l2", type=float, default=1e-3, help='L2 regularization')
-    parser.add_argument("--dropout", type=float, default=0.0)
-    parser.add_argument("--input_sequence_length", type=int, default=128, help='window size')
-    parser.add_argument("--output_sequence_length", type=int, default=10, help='forecasting horizon')
-    parser.add_argument("--batch_size", type=int, default=32)
-    parser.add_argument("--units", type=int, default=20)
-    parser.add_argument("--verbose", type=int, default=1)
-
-    args = parser.parse_args()
-    return args
-
-
 args = get_args()
 
-
-def ex_config():
-    train = False
-    dataset = 'uci'
-    exogenous = False
-    epochs = 2
-    batch_size = 1024
-    input_sequence_length = 96 * 4
-    output_sequence_length = 96
-    dropout = 0.0
-    units = [30]
-    learning_rate = 1e-3
-    cell = 'lstm'
-    l2 = 0.005
-    teacher_forcing = True
-    load = False
-    detrend = False
-
-
-# implementing the "f_main" API
-def main(ex, _run, f_log_metrics):
-    """
-    Updates the main experiment function arguments, calls it and save the
-    experiment results and artifacts.
-    """
-    # Override argparse arguments with sacred arguments
-    cmd_args = args  # argparse command line arguments
-    vars(cmd_args).update(_run.config)
-
-    # call main script
-    val_loss, test_loss, model_name = seq2seq_main(f_log_metrics=f_log_metrics)
-
-    # save the result metrics to db
-    _run.info['model_metrics'] = dict(val_loss=val_loss, test_loss=test_loss)
-    # save an artifact (keras model) to db
-    ex.add_artifact(model_name)
-
-    return test_loss
-
-
-def seq2seq_main(f_log_metrics):
+@f_main(args=args)
+def main():
     ################################
     # Load Experiment's paramaters #
     ################################
@@ -153,7 +97,7 @@ def seq2seq_main(f_log_metrics):
 
 
 
-    if params['load']:
+    if params['load'] is not None:
         logger.info("Loading model's weights from disk using {}".format(params['load']))
         model.load_weights(params['load'])
 
@@ -247,17 +191,15 @@ def seq2seq_main(f_log_metrics):
 
 
 if __name__ == '__main__':
-    grid_search = True
-    if grid_search:
+    if args.grid_search:
         run_grid_search(
             experimentclass=DTSExperiment,
-            parameters=yaml.load(open(os.path.join(config['config'], 'seq2seq.yaml'))),
+            #parameters=yaml.load(open(os.path.join(config['config'], 'seq2seq_gs.yaml'))),
+            f_config=args.add_config,
             db_name=config['db'],
             ex_name='seq2seq_grid_search',
             f_main=main,
-            f_config=ex_config,
             f_metrics=log_metrics,
-            cmd_args=vars(args),
             observer_type='mongodb')
     else:
         run_single_experiment(
@@ -265,7 +207,6 @@ if __name__ == '__main__':
             db_name=config['db'],
             ex_name='seq2seq',
             f_main=main,
-            f_config=ex_config,
+            f_config=args.add_config,
             f_metrics=log_metrics,
-            cmd_args=vars(args),
             observer_type='mongodb')

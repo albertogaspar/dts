@@ -1,5 +1,5 @@
 import numpy as np
-from keras.layers import LSTM, LSTMCell, GRU, GRUCell, RNN, SimpleRNNCell, Dense, Input, Lambda, Concatenate
+from keras.layers import LSTMCell, GRUCell, RNN, SimpleRNNCell, Dense, Input, Flatten, Concatenate
 from keras import Model
 from keras import backend as K
 from keras.metrics import get
@@ -16,9 +16,12 @@ class RecurrentNN(object):
     def __init__(self, layers, cell_type, cell_params):
         """
         Build the rnn with the given number of layers.
-        :param layers:
-        :param cell_type:
-        :param cell_params:
+        :param layers: list
+            list of integers. The i-th element of the list is the number of hidden neurons for the i-th layer.
+        :param cell_type: 'gru', 'rnn', 'lstm'
+        :param cell_params: dict
+            A dictionary containing all the paramters for the RNN cell.
+            see keras.layers.LSTMCell, keras.layers.GRUCell or keras.layers.SimpleRNNCell for more details.
         """
         # init params
         self.horizon = None
@@ -63,33 +66,37 @@ class RecurrentNN_MIMO(RecurrentNN):
 
     def build_model(self, input_shape, horizon, exogenous_shape=None):
         """
-        Return a Keras Model
-        the rnn process a whole sequence of fixed len
+        Create a Model that takes as inputs:
+            - 3D Tensor of shape (batch_size, window_size, n_features)
+            - (optional) 3D Tensor of shape (batch_size, window_size, n_features-1)
+        and outputs:
+            - 2D tensor of shape (batch_size, horizon)
+
         :param input_shape:
-            [batch_size, seq_len, n_features]
+            (window_size, n_features)
         :param horizon: int
-            The forecasting horzion
+            The forecasting horizon
         :param conditions_shape:
-            [batch, horizon, n_features]
+            (horizon, n_features)
         """
         self.horizon = horizon
-        # Create dynamic network based on Gated Recurrent Units (GRU) for target
-        inputs = Input(shape=input_shape, dtype='float32')
-        # [batch_size, units]
+        inputs = Input(shape=input_shape, dtype='float32', name='input')
+        # [batch_size, hidden_state_length]
         out_rnn = self.rnn(inputs)
 
         if exogenous_shape is not None:
             # Include exogenous in the prediction
-            exogenous = Input(exogenous_shape, dtype='float32')
+            exogenous = Input(exogenous_shape, dtype='float32', name='exogenous')  # [batch_size, horizon, n_features]
             out_rnn = Dense(horizon, activation='relu')(out_rnn)
-            exogenous = Dense(horizon, activation='relu')(exogenous)
-            out_rnn = Concatenate()([out_rnn, exogenous])
+            ex = Flatten()(exogenous)                                              # [batch_size, horizon * n_features]
+            ex = Dense(horizon, activation='relu')(ex)
+            out_rnn = Concatenate()([out_rnn, ex])                                 # [batch_size, 2*horizon]
 
         # [batch_size, horizon]
         outputs = Dense(horizon, activation=None)(out_rnn)
 
         if exogenous_shape is not None:
-            self.model = Model(inputs=[inputs, exogenous], outputs=[outputs])
+            self.model = Model(inputs=[inputs, exogenous], outputs=outputs)
         else:
             self.model = Model(inputs=[inputs], outputs=[outputs])
         self.model.summary()
@@ -99,8 +106,12 @@ class RecurrentNN_MIMO(RecurrentNN):
         return self.model.predict(inputs)
 
     def evaluate(self, inputs, fn_inverse=None, fn_plot=None):
-        X, y = inputs[0], inputs[1]
-        y_hat = self.model.predict(inputs[0])
+        try:
+            X, y_exog, y = inputs
+            y_hat = self.model.predict([X, y_exog])
+        except:
+            X, y = inputs
+            y_hat = self.model.predict(X)
         y_hat = np.asarray(y_hat, dtype=y.dtype)
 
         if fn_inverse is not None:
@@ -134,13 +145,21 @@ class RecurrentNN_Rec(RecurrentNN):
         super().__init__(*args, **kwargs)
 
     def build_model(self, input_shape, horizon):
+        """
+        Create a Model that takes as inputs:
+            - 3D Tensor of shape (batch_size, window_size, n_features)
+        and outputs:
+            - 2D tensor of shape (batch_size, 1)
+
+        :param input_shape:
+            (window_size, n_features)
+        :param horizon: int
+            The forecasting horizon
+        """
         self.horizon = horizon
-        # Create dynamic network based on Gated Recurrent Units (GRU) for target
         inputs = Input(shape=input_shape, dtype='float32')
-        # [batch_size, units]
-        out_rnn = self.rnn(inputs)
-        # [batch_size, 1]
-        outputs = Dense(1, activation=None)(out_rnn)
+        out_rnn = self.rnn(inputs)                    # [batch_size, hidden_state_length]
+        outputs = Dense(1, activation=None)(out_rnn)  # [batch_size, 1]
 
         self.model = Model(inputs=[inputs], outputs=[outputs])
         self.model.summary()
@@ -150,21 +169,22 @@ class RecurrentNN_Rec(RecurrentNN):
         """
         Perform recursive prediction by feeding the network input at time t+1 with the prediction at
         time t. This is repeted 'horizon' number of time.
+
         :param input: np.array
-            (n_samples, input_sequence_len, n_features), n_features is supposed to be 1 (univariate time-series)
+            (batch_size, window_size, n_features), n_features is supposed to be 1 (univariate time-series)
         :param exogenous: np.array
-            (n_samples, input_sequence_len, n_exog_features)
+            (batch_size, window_size, n_exog_features)
         :return: np.array
-            (n_samples, pred_steps)
+            (batch_size, horizon)
         """
-        input_seq = inputs                                    # (batch_size, n_timestamps, n_features)
-        output_seq = np.zeros((input_seq.shape[0], self.horizon))  # (batch_size, pred_steps)
+        input_seq = inputs                                         # (batch_size, n_timestamps, n_features)
+        output_seq = np.zeros((input_seq.shape[0], self.horizon))  # (batch_size, horizon)
         for i in tqdm(range(self.horizon)):
             if self.return_sequence:
-                output = self.model.predict(input_seq)        # [batch_size, input_timesteps]
+                output = self.model.predict(input_seq)             # [batch_size, input_timesteps]
                 output = output[:,-1:]
             else:
-                output = self.model.predict(input_seq)        # [batch_size, 1]
+                output = self.model.predict(input_seq)             # [batch_size, 1]
             input_seq[:, :-1, :] = input_seq[:, 1:, :]
             input_seq[:, -1:, 0] = output
             if exogenous is not None:

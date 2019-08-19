@@ -16,7 +16,12 @@ class Seq2SeqBase:
     Base class for a RNN-based Sequnece to Sequence model (for time-series prediction)
     """
 
-    def __init__(self, encoder_layers, decoder_layers, output_sequence_length, dropout=0.0, l2=0.01, cell_type='lstm'):
+    def __init__(self, encoder_layers,
+                 decoder_layers,
+                 output_sequence_length,
+                 dropout=0.0,
+                 l2=0.01,
+                 cell_type='lstm'):
         """
         :param encoder_layers: list
             encoder (RNN) architecture: [n_hidden_units_1st_layer, n_hidden_units_2nd_layer, ...]

@@ -54,6 +54,31 @@ deep learning architectures. E.g.:
 
 - you can decide to apply **detrending** to the time series (see `dts.datasets.*.apply_detrend` for more details).
 
+#### Run Experiment
+```bash
+python FILENAME.py --add_config FULLPATH_TO_YAML_FILE 
+```
+or:
+```bash
+python FILENAME.py --add_config FULLPATH_TO_YAML_FILE --grid_search 
+```
+
+_grid_search_: defines whether or not you are searching for the best hyperparamters. 
+If True, multiple experiments are runned, each with a different combination of hyperparamters. 
+The process terminates when all possible combinations of hyperparamers have been explored. 
+
+_add_config_: The experiment's hyperparamters should be define  as a yaml file in the config folder 
+(see [How to write a config file]() for more details). FULLPATH_TO_YAML_FILE is the fullpath to 
+the .yaml file that stores your configuration.
+The main function for your model should always look similar to this one:
+
+If you want to train a model using **pretrained weights** just run the model providing the paramter --load 
+followed by the fullpath to the file containing the weights.
+```bash
+python FILENAME.py --add_config FULLPATH_TO_YAML_FILE --load FULLPATH_TO_WEIGHTS 
+```
+The model will be initilized with this weights before training. 
+
 #### Datasets
 - **Individual household electric power consumption Data Set**: Measurements of electric power consumption in _one household_ with a one-minute sampling rate over a period of almost 4 years.
 [Dataset & Description](https://archive.ics.uci.edu/ml/datasets/individual+household+electric+power+consumption).
@@ -71,7 +96,7 @@ Included architetures are:
     The training and inference procedures are the same.
     
     <p align="center">
-      <img src="./images/rnn_MIMO.png" width="60%" height="60%"/>
+      <img src="./images/rnn_MIMO.png" width="50%" height="50%"/>
     </p>
 
   - _Recurrent_: The RNN is trained to predict the next step, i.e. the output space during training has size 1. During inference, 
@@ -79,7 +104,7 @@ Included architetures are:
     n<sub>O</sub> is obtained.
   
     <p align="center">
-      <img src="./images/rnn_rec.png" width="60%" height="60%"/>
+      <img src="./images/rnn_rec.png" width="50%" height="50%"/>
     </p>
   
 - **Seq2Seq**:
@@ -108,51 +133,6 @@ Included architetures are:
 - **Feedforward Neural Networks** (both MIMO and Recurrent)
 - **ResNet** (both MIMO and Recurrent): a feedforward neural network with residual connections.
 
-**Train a model**:
-
-See `dts.examples`
-
-**Load weights**:
-
-If you want to load a model using pretrained weights just run the model setting the paramters load to the fullpath of 
-the file containing the weights. The model will be initilized with this weights before training. 
-
-#### Run Experiment
-The main function for your model should always look similar to this one:
-```python
-if __name__ == '__main__':
-    import os, yaml
-    from dts import config
-    from dts.utils.experiments import DTSExperiment, run_grid_search, run_single_experiment
-    
-    if grid_search:
-        run_grid_search(
-            experimentclass=DTSExperiment,
-            parameters=yaml.load(open(os.path.join(config['config'], 'MODEL_CONFIG_FILENAME.yaml'))),
-            db_name=config['db'],
-            ex_name='EXPERIMENT_NAME',
-            f_main=main,
-            f_config=ex_config,
-            f_metrics=log_metrics,
-            cmd_args=vars(args),
-            observer_type='mongodb')
-    else:
-        run_single_experiment(
-            experimentclass=DTSExperiment,
-            db_name=config['db'],
-            ex_name='EXPERIMENT_NAME',
-            f_main=main,
-            f_config=ex_config,
-            f_capture=log_metrics,
-            cmd_args=vars(args),
-            observer_type='mongodb')
-```
-- _grid_search_: defines whether or not you are searching for the best hyperparamters. 
-If True, multiple experiments are runned, each with a different combination of hyperparamters. 
-The process terminates when all possible combinations of hyperparamers have been explored. 
-The hyperparamters should be define  as a yaml file in the config folder 
-(see [How to write a config file]() for more details).
-- for the other paramters please check the documentation at `dts.utils.experiments`
 
 ## Project Structure
 - **dts**: contains models, utilities and example to train and test differnt deep learning models.

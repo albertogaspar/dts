@@ -83,9 +83,17 @@ def get_rnn_inputs(data, window_size, horizon,
                    multivariate_output=False, shuffle=False, other_horizon=None):
     """
     Prepare data for feeding a RNN model.
-    :param X: numpy.array
+    :param data: numpy.array
         shape (n_samples, n_features) or (M, n_samples, n_features)
-    :return: list
+    :param window_size: int
+        Fixed size of the look-back
+    :param horizon: int
+        Forecasting horizon, the number of future steps that have to be forecasted
+    :param multivariate_output: if True, the target array will not have shape
+        (n_samples, output_sequence_len) but (n_samples, output_sequence_len, n_features)
+    :param shuffle: if True shuffle the data on the first axis
+    :param other_horizon:
+    :return: tuple
         Return two numpy.arrays: the input and the target for the model.
         the inputs has shape (n_samples, input_sequence_len, n_features)
         the target has shape (n_samples, output_sequence_len)
@@ -113,8 +121,8 @@ def get_rnn_inputs(data, window_size, horizon,
                 else:
                     targets.append(
                         X[i + 1: i + window_size + 1, 0])
-    encoder_input_data = np.asarray(inputs)  # (n_samples, n_features, sequence_len)
-    decoder_target_data = np.asarray(targets)  # (n_samples, horizon) or (n_samples, n_features, horizon) if multivariate_output
+    encoder_input_data = np.asarray(inputs)  # (n_samples, sequence_len, n_features)
+    decoder_target_data = np.asarray(targets)  # (n_samples, horizon) or (n_samples, horizon, n_features) if multivariate_output
     idxs = np.arange(encoder_input_data.shape[0])
     if shuffle:
         np.random.shuffle(idxs)
@@ -123,12 +131,16 @@ def get_rnn_inputs(data, window_size, horizon,
 
 def get_seq2seq_inputs(data, window_size, horizon, noise_model=False, shuffle=False):
     """
-    Prepare data for feeding a Sequnece2Sequence model.
+    Prepare data for feeding a Seq2Seq model.
     :param data: numpy.array
         shape (n_samples, n_features) or (M, n_samples, n_features)
-    :param noise_model: bool
-        If True add gaussian random noise to the decoder input data (for training when using TF mode).
-    :return: list
+    :param window_size: int
+        Fixed size of the look-back
+    :param horizon: int
+        Forecasting horizon, the number of future steps that have to be forecasted
+    :param noise_model: If True add gaussian random noise to the decoder input data (for training when using TF mode).
+    :param shuffle: if True shuffle the data on the first axis
+    :return: tuple
         Return three numpy.arrays: the encoder input, the decoder input and the target for the model.
         the encoder inputs has shape (n_samples, input_sequence_len, n_features)
         the decoder inputs has shape (n_samples, input_sequence_len, n_features) and corresponds to the target lagged by 1. (teacher forcing)

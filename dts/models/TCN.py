@@ -47,7 +47,7 @@ def tcn_residual_block(inputs,
         bias_regularizer: Regularizer function applied to the bias vector
             (see [regularizer](../regularizers.md)).
     # Input shape
-        3D tensor with shape: `(batch, steps, channels)`
+        3D tensor with shape: `(batch, steps, n_features)`
     # Output shape
         3D tensor with shape: `(batch, steps, filters)`
     """
@@ -100,7 +100,7 @@ def wavenet_residual_block(inputs,
         bias_regularizer: Regularizer function applied to the bias vector
             (see [regularizer](../regularizers.md)).
     # Input shape
-        3D tensor with shape: `(batch, steps, channels)`
+        3D tensor with shape: `(batch, steps, n_features)`
     # Output shape
         3D tensor with shape: `(batch, steps, filters)`
     """
@@ -162,7 +162,7 @@ def simple_residual_block(inputs,
         bias_regularizer: Regularizer function applied to the bias vector
             (see [regularizer](../regularizers.md)).
     # Input shape
-        3D tensor with shape: `(batch, steps, channels)`
+        3D tensor with shape: `(batch, steps, n_features)`
     # Output shape
         3D tensor with shape: `(batch, steps, filters)`
     """
@@ -221,8 +221,8 @@ def conditional_block(inputs,
         bias_regularizer: Regularizer function applied to the bias vector
             (see [regularizer](../regularizers.md)).
     # Input shape
-        3D tensor with shape: `(batch, steps, channels)`
-        3D tensor with shape: `(batch, steps, features)`
+        3D tensor with shape: `(batch, steps, n_features_1)`
+        3D tensor with shape: `(batch, steps, n_features_2)`
     # Output shape
         3D tensor with shape: `(batch, steps, filters)`
     """
@@ -470,6 +470,7 @@ class TCNModel:
         self.built = False
         self.tcn_type = tcn_type
         self.model = None
+        self.out_shape = None
         params = dict(
             layers=layers,
             dilation_rate=dilation_rate,
@@ -493,17 +494,18 @@ class TCNModel:
     def build_model(self, input_shape, output_shape, conditions_shape=None, use_final_dense=False):
         """
         :param input_shape:
-            (batch, steps, channels)`
+            (batch, steps, n_features)`
         :param output_shape:
-            (batch, forecasting horizon, 1)
+            (batch, horizon, 1)
         :param conditions_shape:
-            (batch, steps, feature)
+            (batch, window_size, n_features)
         :param use_final_dense:
             if True transfrom output using a Dense Net
         :return:
-            (batch, forecasting horizon)
+            (batch, horizon)
         """
         # inputs
+        self.out_shape = output_shape
         inputs = Input(shape=input_shape)
 
         # define model
@@ -531,10 +533,17 @@ class TCNModel:
         model.summary()
         return model
 
-    def predict(self, X, horizon, exogenous=None):
+    def predict(self, inputs):
+        if self.return_sequence:
+            return self.model.predict(inputs)
+        else:
+            return self._predict_rec(inputs)
+
+
+    def _predict_rec(self, inputs):
         """
         Recursive Forecast. To be used whith return_sequence = False and forecasting horizon > 1.
-        :param X: array
+        :param inputs: array
             Input array to be used for prediction
         :param horizon: int
             The forecasting horizon
@@ -542,15 +551,12 @@ class TCNModel:
             Exogenous features to be included for prediction pruposes
         :return:
         """
-        predictions = np.zeros(X.shape[0], horizon)
-        predictions[:, 0] = self.model.predict(X)
-        for i in range(1, horizon):
-            if exogenous is not None:
-                new = np.concatenate(predictions[:, -1], exogenous[:, i - 1, :])
-                X = np.concatenate([X[:, 1:, :], new[:, :]])
-            else:
-                X = X[:, 1:, :]
-        return predictions
+        outputs = np.zeros((inputs.shape[0], self.out_shape))  # (batch_size, pred_steps)
+        for i in range(self.out_shape):
+            out = self.model.predict(inputs) # [batch, 1]
+            outputs[:, i] = out[:, 0]
+            inputs = np.concatenate([inputs[:, 1:, :], np.expand_dims(out, -1)], 1)
+        return outputs
 
     def evaluate(self, data, fn_inverse=None, fn_plot=None):
         """
@@ -559,10 +565,10 @@ class TCNModel:
         """
         try:
             X, y = data
-            y_hat = self.model.predict(X)
+            y_hat = self.predict(X)
         except:
             X, X_ex, y = data
-            y_hat = self.model.predict([X, X_ex])
+            y_hat = self.predict([X, X_ex])
 
         if fn_inverse is not None:
             y = fn_inverse(y)

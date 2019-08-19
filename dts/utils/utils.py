@@ -7,6 +7,7 @@ import re
 import tensorflow as tf
 from tqdm import tqdm
 from itertools import product
+from argparse import ArgumentParser
 
 
 def get_flops(model):
@@ -219,35 +220,18 @@ def unpaired_ttest(fp1, fp2):
         pvalues.append(pvalue)
         print('{} {}: p-value={} --- > {}'.format(metrics_names[i], test, pvalue, txt))
 
-    print('Bonferroni corecction')
+    print('Bonferroni corection')
     from statsmodels.sandbox.stats.multicomp import multipletests
     res = multipletests(pvalues, method='bonferroni')
     print(res[0],res[1])
 
 
-def run_grid_search(experimentclass, parameters, db_name, ex_name, f_main, f_config, f_metrics, cmd_args, observer_type):
-    keys = list(parameters.keys())
-    values = list(parameters.values())
-    for vals in tqdm(product(*values)):
-        _run_params = dict(sorted(list(zip(keys, vals))))
-        experiment = experimentclass(
-            db_name=db_name,
-            ex_name=ex_name,
-            f_main=f_main,
-            f_config=f_config,
-            f_capture=f_metrics,
-            cmd_args=cmd_args,
-            observer_type=observer_type)
-        experiment.ex.run(config_updates=_run_params)  # update config paramters with given params
-
-
-def run_single_experiment(experimentclass, db_name, ex_name, f_main, f_config, f_metrics, cmd_args, observer_type):
-    experiment = experimentclass(
-        db_name=db_name,
-        ex_name=ex_name,
-        f_main=f_main,
-        f_config=f_config,
-        f_capture=f_metrics,
-        cmd_args=cmd_args,
-        observer_type=observer_type)
-    experiment.ex.run_commandline()
+def get_args():
+    parser = ArgumentParser()
+    parser.add_argument('--add_config', type=str, default=None,
+                        help="full path to the yaml file containing the experiment's (hyper)parameters.")
+    parser.add_argument('--grid_search', action='store_true')
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--load", type=str, default=None, help="full path to the model's weights")
+    args = parser.parse_args()
+    return args

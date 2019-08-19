@@ -4,6 +4,8 @@ from dts.datasets.utils import *
 from dts.utils.split import *
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from datetime import datetime
+import requests, zipfile, io
+import warnings
 
 NAME = 'gefcom'
 SAMPLES_PER_DAY = 24
@@ -12,9 +14,42 @@ TARGET = 'LOAD'
 DATETIME = 'datetime'
 
 
+def download():
+    """
+    Download data and extract them in the data directory
+    :return:
+    """
+    url = 'https://www.dropbox.com/s/pqenrr2mcvl0hk9/GEFCom2014.zip?dl=1'
+    logger.info('Donwloading .zip file from {}'.format(url))
+    r = requests.get(url)
+    logger.info('File downloaded.')
+    z = zipfile.ZipFile(io.BytesIO(r.content))
+    z.extractall(path=config['data'])
+
+    new_loc = os.path.join(config['data'], 'GEFCom2014')
+    os.rename(os.path.join(config['data'], 'GEFCom2014 Data'),
+              new_loc)
+
+    z = zipfile.ZipFile(os.path.join(new_loc, 'GEFCom2014-L_V2.zip'))
+    z.extractall(path=os.path.join(new_loc))
+
+    logger.info('File extracted and available at {}'.format(new_loc))
+    process_csv()
+    logger.info('The original CSV has been parsed and is now available at {}'.format(
+        os.path.join(config['data'], 'UCI_household_power_consumption_synth.csv')))
+
+
+def process_csv():
+    """
+    Parse the datetime field, Sort the values accordingly and save the new dataframe to disk
+    """
+    df = load_raw_dataset()
+    df.to_csv(os.path.join(config['data'], 'GEFCom2014/Load/gefcom2014.csv'), index=False)
+
+
 def load_raw_dataset():
     """
-    Load the dataset as is
+    Load the dataset as is.
     :return: pandas.DataFrame: sorted dataframe with parsed datetime
     """
     data_dir = os.path.join(config['data'], 'GEFCom2014/Load/Task 1/')
@@ -31,7 +66,6 @@ def load_raw_dataset():
 def load_dataset():
     """
     Load an already cleaned version of the dataset
-    :return:
     """
     df = pd.read_csv(os.path.join(config['data'], 'GEFCom2014/Load/gefcom2014.csv'))
     df[DATETIME] = df[DATETIME].apply(lambda x: datetime.strptime(x, '%Y-%m-%d %H:%M:%S'))
@@ -104,7 +138,13 @@ def load_data(fill_nan=None,
 
     if not use_prebuilt:
         logger.info('Fetching and preprocessing data. This will take a while...')
-        df = load_dataset()
+        try:
+            df = load_dataset()
+        except:
+            logger.info('The dataset seems to be unavailable on your disk. '
+                        'It will be downloaded'
+                        'This will take some time...')
+            download()
 
         if detrend:
             if split_type == 'default' and not is_train:
@@ -188,13 +228,15 @@ def _add_holidays(df):
     :param df: the datafrme
     :return: the agumented dtaframe
     """
-    idx = []
-    idx.extend(df[df.day == 1][df.month == 1].index.tolist())  # new year's eve
-    idx.extend(df[df.day == 4][df.month == 7].index.tolist())  # independence day
-    idx.extend(df[df.day == 11][df.month == 11].index.tolist())  # veternas day
-    idx.extend(df[df.day == 25][df.month == 12].index.tolist())  # christams
-    df.loc[idx, 'holiday'] = 1
-    return df
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        idx = []
+        idx.extend(df[df.day == 1][df.month == 1].index.tolist())  # new year's eve
+        idx.extend(df[df.day == 4][df.month == 7].index.tolist())  # independence day
+        idx.extend(df[df.day == 11][df.month == 11].index.tolist())  # veternas day
+        idx.extend(df[df.day == 25][df.month == 12].index.tolist())  # christams
+        df.loc[idx, 'holiday'] = 1
+        return df
 
 
 def transform(X, scaler=None, scaler_type=None):
@@ -226,8 +268,12 @@ def inverse_transform(X, scaler, trend=None):
     """
     X = X.astype(np.float32)
     X = scaler.inverse_transform(X)
-    if trend is not None:
+    try:
         X += trend
+    except TypeError as e:
+        logger.warn(str(e))
+    except Exception as e:
+        logger.warn('General error (not a TypeError) while adding back time series trend. \n {}'.format(str(e)))
     return X
 
 

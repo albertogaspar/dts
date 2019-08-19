@@ -1,4 +1,12 @@
-from keras.callbacks import EarlyStopping, LambdaCallback
+"""
+Main script for training and evaluating a ERNN, GRU, LSTM trained either in MIMO or Recurrent fashion
+for multi-step forecasting task.
+You can chose bewteen:
+    - Running a simple experiment
+    - Running multiple experiments trying out diffrent combinations of hyperparamters (grid-search)
+"""
+
+from keras.callbacks import EarlyStopping
 from keras.regularizers import l2
 from keras.optimizers import Adam
 
@@ -9,82 +17,17 @@ from dts import logger
 from dts.utils.plot import plot
 from dts.utils import metrics
 from dts.utils import run_grid_search, run_single_experiment
-from dts.utils import DTSExperiment, log_metrics
+from dts.utils import DTSExperiment, log_metrics, get_args
 from dts.utils.split import *
 from dts.models.Recurrent import *
-from argparse import ArgumentParser
-import yaml
+from dts.utils.decorators import f_main
 import time
 import os
 
-
-def get_args():
-    parser = ArgumentParser()
-    parser.add_argument('--train', action='store_true', help='Training FLAG. Use SACRED args if True')
-    parser.add_argument("--dataset", type=str, default='gefcom', help='Dataset to be used: uci, gefcom')
-    parser.add_argument('--exogenous', action='store_true', help='Add exogenous features to the data')
-    parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--cell", type=str, default='rnn', help='RNN cell to be used: rnn (Elmann), lstm, gru')
-    parser.add_argument('--MIMO', action='store_true',
-                        help='Multi step forecast strategy. If True use MIMO else Recursive')
-    parser.add_argument("--learning_rate", type=float, default=1e-3)
-    parser.add_argument("--l2", type=float, default=1e-3, help='L2 regularization')
-    parser.add_argument("--dropout", type=float, default=0.0)
-    parser.add_argument("--input_sequence_length", type=int, default=128, help='window size')
-    parser.add_argument("--output_sequence_length", type=int, default=10, help='forecasting horizon')
-    parser.add_argument("--batch_size", type=int, default=32)
-    parser.add_argument("--layers", type=int, default=1)
-    parser.add_argument("--units", type=int, default=20)
-    parser.add_argument("--verbose", type=int, default=1)
-
-    args = parser.parse_args()
-    return args
-
-
 args = get_args()
 
-
-def ex_config():
-    train = False
-    dataset = 'uci'
-    exogenous = False
-    epochs = 2
-    batch_size = 1024
-    input_sequence_length = 96 * 4
-    output_sequence_length = 96
-    dropout = 0.0
-    layers = 1
-    units = 30
-    learning_rate = 1e-3
-    cell = 'lstm'
-    l2 = 0.001
-    MIMO = True
-    load = False
-    detrend = False
-
-
-# implementing the "f_main" API
-def main(ex, _run, f_log_metrics):
-    """
-    Updates the main experiment function arguments, calls it and save the
-    experiment results and artifacts.
-    """
-    # Override argparse arguments with sacred arguments
-    cmd_args = args  # argparse command line arguments
-    vars(cmd_args).update(_run.config)
-
-    # call main script
-    val_loss, test_loss, model_name = rnn_main(f_log_metrics=f_log_metrics)
-
-    # save the result metrics to db
-    _run.info['model_metrics'] = dict(val_loss=val_loss, test_loss=test_loss)
-    # save an artifact (keras model) to db
-    ex.add_artifact(model_name)
-
-    return test_loss
-
-
-def rnn_main(f_log_metrics):
+@f_main(args=args)
+def main(_run):
     ################################
     # Load Experiment's paramaters #
     ################################
@@ -102,7 +45,7 @@ def rnn_main(f_log_metrics):
 
     data = dataset.load_data(fill_nan='median',
                              preprocessing=True,
-                             split_type='default',
+                             split_type='simple',
                              is_train=params['train'],
                              detrend=params['detrend'],
                              exogenous_vars=params['exogenous'],
@@ -115,17 +58,21 @@ def rnn_main(f_log_metrics):
         X_train, y_train = get_rnn_inputs(train,
                                           window_size=params['input_sequence_length'],
                                           horizon=params['output_sequence_length'],
-                                          shuffle=True)
+                                          shuffle=True,
+                                          multivariate_output=True)
     else:
         X_train, y_train = get_rnn_inputs(train,
                                           window_size=params['input_sequence_length'],
                                           horizon=1,
-                                          shuffle=True)
+                                          shuffle=True,
+                                          multivariate_output=True)
 
     if params['exogenous']:
         exog_var_train = y_train[:, :, 1:]
         y_train = y_train[:, :, 0]
         exogenous_shape = (exog_var_train.shape[1], exog_var_train.shape[-1])
+        if params['MIMO']:
+            X_train = [X_train, exog_var_train]
 
         X_test, y_test = get_rnn_inputs(test,
                                         window_size=params['input_sequence_length'],
@@ -133,8 +80,9 @@ def rnn_main(f_log_metrics):
                                         shuffle=False,
                                         multivariate_output=True)
         exog_var_test = y_test[:, :, 1:]  # [n_samples, 1, n_features]
-        y_test = y_test[:, :, 0]  # [n_samples, 1, 1]
+        y_test = y_test[:, :, 0]  # [n_samples, 1]
     else:
+        y_train = y_train[:, :, 0]
         X_test, y_test = get_rnn_inputs(test,
                                         window_size=params['input_sequence_length'],
                                         horizon=params['output_sequence_length'],
@@ -167,7 +115,7 @@ def rnn_main(f_log_metrics):
                                layers=params['layers'],
                                cell_params=cell_params)
         if params['exogenous']:
-            model = rnn.build_model(input_shape=(params['input_sequence_length'], X_train.shape[-1]),
+            model = rnn.build_model(input_shape=(params['input_sequence_length'], X_train[0].shape[-1]),
                                     horizon=params['output_sequence_length'],
                                     exogenous_shape=exogenous_shape)
         else:
@@ -211,11 +159,18 @@ def rnn_main(f_log_metrics):
     fn_inverse_test = lambda x: dataset.inverse_transform(x, scaler=scaler, trend=trend)
     fn_plot = lambda x: plot(x, dataset.SAMPLES_PER_DAY, save_at=None)
 
+    if params['MIMO']:
+        val_scores = rnn.evaluate(history.validation_data[:-1], fn_inverse=fn_inverse_val)
+    else:
+        val_scores = []
+        txt = "When RNN is trained in Recursive mode training and inference are different. Specifically, training is "\
+              "a 1 step forecasting problem and inference is multi step forecasting problem. Thus, "\
+              "validation results will not be provided as they are not comparable with test results"
+        logger.warn(txt)
+        _run.info['extra'] = txt
     if params['exogenous']:
-        val_scores = rnn.evaluate(history.validation_data, fn_inverse=fn_inverse_val)
         test_scores = rnn.evaluate([[X_test, exog_var_test], y_test], fn_inverse=fn_inverse_test, fn_plot=fn_plot)
     else:
-        val_scores = rnn.evaluate(history.validation_data, fn_inverse=fn_inverse_val)
         test_scores = rnn.evaluate([X_test, y_test], fn_inverse=fn_inverse_test, fn_plot=fn_plot)
 
     metrics_names = [m.__name__ if not isinstance(m, str) else m for m in model.metrics]
@@ -225,17 +180,14 @@ def rnn_main(f_log_metrics):
 
 
 if __name__ == '__main__':
-    grid_search = True
-    if grid_search:
+    if args.grid_search:
         run_grid_search(
             experimentclass=DTSExperiment,
-            parameters=yaml.load(open(os.path.join(config['config'], 'recurrent.yaml'))),
             db_name=config['db'],
             ex_name='rnn',
             f_main=main,
-            f_config=ex_config,
             f_metrics=log_metrics,
-            cmd_args=vars(args),
+            f_config=args.add_config,
             observer_type='mongodb')
     else:
         run_single_experiment(
@@ -243,7 +195,6 @@ if __name__ == '__main__':
             db_name=config['db'],
             ex_name='rnn',
             f_main=main,
-            f_config=ex_config,
-            f_capture=log_metrics,
-            cmd_args=vars(args),
+            f_config=args.add_config,
+            f_metrics=log_metrics,
             observer_type='mongodb')

@@ -7,12 +7,47 @@ from dts.utils.split import *
 from sklearn.preprocessing import StandardScaler
 from sklearn.externals import joblib
 from datetime import datetime
+import requests, zipfile, io
 
 NAME = 'uci'
 SAMPLES_PER_DAY = 96
 FREQ = '15T'
 TARGET = 'Global_active_power'
 DATETIME = 'datetime'
+
+
+def download():
+    """
+    Download data and extract them in the data directory
+    :return:
+    """
+    url = 'https://archive.ics.uci.edu/ml/machine-learning-databases/00235/household_power_consumption.zip'
+    logger.info('Donwloading .zip file from {}'.format(url))
+    r = requests.get(url)
+    logger.info('File downloaded.')
+    z = zipfile.ZipFile(io.BytesIO(r.content))
+    z.extractall(path=config['data'])
+    new_loc = os.path.join(config['data'], 'UCI_household_power_consumption.csv')
+    os.rename(os.path.join(config['data'], 'household_power_consumption.txt'),
+              new_loc)
+    logger.info('File extracted and available at {}'.format(new_loc))
+    process_csv()
+    logger.info('The original CSV has been parsed and is now available at {}'.format(
+        os.path.join(config['data'], 'UCI_household_power_consumption_synth.csv')))
+
+
+def process_csv():
+    """
+    Parse the datetime field, Sort the values accordingly and save the new dataframe to disk
+    """
+    df = pd.read_csv(os.path.join(config['data'],'UCI_household_power_consumption.csv'), sep=';')
+    df['datetime'] = list(map(lambda d: datetime.combine(datetime.strptime(d[0], '%d/%m/%Y').date(),
+                                                           datetime.strptime(d[1], '%H:%M:%S').time()),
+                              df[['Date', 'Time']].values))
+    df = df.sort_values(['datetime']).reset_index(drop=True)
+    df = df[['datetime', 'Global_active_power']]
+    df['datetime'] = pd.to_datetime(df['datetime'], utc=False)
+    df.to_csv(os.path.join(config['data'], 'UCI_household_power_consumption_synth.csv'), index=False)
 
 
 def load_raw_dataset():
@@ -189,7 +224,13 @@ def load_data(fill_nan=None,
 
     if not use_prebuilt:
         logger.info('Fetching and preprocessing data. This will take a while...')
-        df = load_dataset(fill_nan=fill_nan)
+        try:
+            df = load_dataset(fill_nan=fill_nan)
+        except:
+            logger.info('The dataset seems to be unavailable on your disk. '
+                        'It will be downloaded'
+                        'This will take some time...')
+            download()
 
         if detrend:
             if split_type == 'default' and not is_train:
@@ -231,7 +272,7 @@ def load_data(fill_nan=None,
         try:
             return load_prebuilt_data(split_type=split_type, exogenous_vars=exogenous_vars, detrend=detrend,
                                       is_train=is_train, dataset_name=NAME)
-        except FileNotFoundError as e:
+        except:
             logger.warn('An already preprocessed version of the data do not exists on disk. '
                         'The train/test data will be created now.')
             return load_data(fill_nan, preprocessing, detrend, exogenous_vars, train_len, test_len,
@@ -333,37 +374,6 @@ def apply_detrend(df, train_len):
             df_copy.loc[idxs, 'trend'] = mu
     df[TARGET] = df_copy[TARGET].values
     return df, np.float32(df_copy['trend'].values)
-
-
-if __name__ == '__main__':
-    from matplotlib import pyplot as plt
-    df = load_dataset('median')
-
-    exogenous = False
-    split_type = 'default'
-    for detrend in [False]:
-        for is_train in [True, False]:
-            # data = load_data(fill_nan='median',
-            #                  preprocessing=True,
-            #                  split_type=split_type,
-            #                  use_prebuilt=False,
-            #                  is_train=is_train,
-            #                  detrend=detrend)
-            # scaler, train, test, trend = data['scaler'], data['train'], data['test'], data['trend']
-
-            # plt.plot(df[TARGET].values)
-            # plt.plot(inverse_transform(train, scaler=scaler, trend=trend)[0])
-            # plt.show()
-
-            # save_data(data=data, split_type=split_type, exogenous_vars=exogenous, is_train=is_train, dataset_name=NAME)
-            x = load_prebuilt_data(split_type=split_type, exogenous_vars=exogenous, is_train=is_train, detrend=detrend,
-                                   dataset_name=NAME)
-            scaler, train, test, trend = x['scaler'], x['train'], x['test'], x['trend']
-            for k,v in x.items():
-                try:
-                    print(k, v.shape)
-                except:
-                    print(k)
 
 
 
