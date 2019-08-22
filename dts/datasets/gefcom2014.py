@@ -56,8 +56,8 @@ def load_raw_dataset():
     df = pd.read_csv(os.path.join(data_dir, 'L1-train.csv'))
     for i in range(2, 16):
         data_dir = os.path.join(config['data'], 'GEFCom2014/Load/Task {}/'.format(i))
-    tmp = pd.read_csv(os.path.join(data_dir, 'L{}-train.csv'.format(i)))
-    df = pd.concat([df, tmp], axis=0)
+        tmp = pd.read_csv(os.path.join(data_dir, 'L{}-train.csv'.format(i)))
+        df = pd.concat([df, tmp], axis=0)
     df[DATETIME] = pd.date_range('01-01-2001', '12-01-2011', freq=FREQ)[1:]
     df = df[~pd.isnull(df.LOAD)].reset_index(drop=True)
     return df
