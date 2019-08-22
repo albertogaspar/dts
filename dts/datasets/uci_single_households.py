@@ -227,10 +227,12 @@ def load_data(fill_nan=None,
         try:
             df = load_dataset(fill_nan=fill_nan)
         except:
-            logger.info('The dataset seems to be unavailable on your disk. '
+            logger.warn('The dataset seems to be unavailable on your disk at {}'
                         'It will be downloaded'
-                        'This will take some time...')
+                        'This will take some time...'.format(
+                os.path.join(config['data'], 'UCI_household_power_consumption_synth.csv')))
             download()
+            df = load_dataset(fill_nan=fill_nan)
 
         if detrend:
             if split_type == 'default' and not is_train:
