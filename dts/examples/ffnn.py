@@ -108,7 +108,7 @@ def main(_run):
         trend = y_trend_test
 
     model = ffnn.build_model(input_shape=(X_train.shape[1], X_train.shape[-1]),
-                             output_shape=(params['output_sequence_length'],),
+                             horizon=params['output_sequence_length'],
                              conditions_shape=conditions_shape)
 
     if params['load']:
@@ -176,7 +176,7 @@ if __name__ == '__main__':
         run_grid_search(
             experimentclass=DTSExperiment,
             db_name=config['db'],
-            ex_name='rnn',
+            ex_name='ffnn_grid_search',
             f_main=main,
             f_metrics=log_metrics,
             f_config=args.add_config,
@@ -185,7 +185,7 @@ if __name__ == '__main__':
         run_single_experiment(
             experimentclass=DTSExperiment,
             db_name=config['db'],
-            ex_name='rnn',
+            ex_name='ffnn',
             f_main=main,
             f_config=args.add_config,
             f_metrics=log_metrics,

@@ -26,11 +26,12 @@ def save_data(data, split_type=None, exogenous_vars=False, is_train=False, datas
         data['trend'] = [data['trend'][0], data['trend'][1]]
     except:
         data['trend'] = [None, None]
-    np.savez_compressed(os.path.join(path, data_filename),
-             train=data['train'],
-             test=data['test'],
-             trend_train=data['trend'][0],
-             trend_test=data['trend'][1])
+    np.savez_compressed(
+        os.path.join(path, data_filename),
+        train=data['train'],
+        test=data['test'],
+        trend_train=data['trend'][0],
+        trend_test=data['trend'][1])
     joblib.dump(data['scaler'],
                 os.path.join(path, scaler_filename))
 
@@ -93,11 +94,17 @@ def load_prebuilt_data(split_type=None, exogenous_vars=False, detrend=False, is_
     del data_files
 
     data = np.load(os.path.join(path, data_file))
+    # this is needed beacuse of the allow_pickle problem in np.load (changes after 1.16.1)
+    try:
+        trend = [data['trend_train'], data['trend_test']]
+    except:
+        trend = [None, None]
+
     return dict(
         scaler=joblib.load(os.path.join(path, scaler_file)),
         train=data['train'],
         test=data['test'],
-        trend=[data['trend_train'],data['trend_test']])
+        trend=trend)
 
 
 def build_filenames(data, is_train=False, exogenous_vars=False, dataset_name=None):
