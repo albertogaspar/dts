@@ -25,7 +25,7 @@ args = get_args()
 
 
 @f_main(args=args)
-def main():
+def main(_run):
     ################################
     # Load Experiment's paramaters #
     ################################
@@ -169,7 +169,7 @@ if __name__ == '__main__':
             ex_name='tcn_grid_search',
             f_main=main,
             f_metrics=log_metrics,
-            observer_type='mongodb')
+            observer_type=args.observer)
     else:
         run_single_experiment(
             experimentclass=DTSExperiment,
@@ -179,4 +179,4 @@ if __name__ == '__main__':
             # f_config=os.path.join(config['config'], 'tcn.yaml'),
             f_config=args.add_config,
             f_metrics=log_metrics,
-            observer_type='mongodb')
+            observer_type=args.observer)

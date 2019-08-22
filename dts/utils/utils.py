@@ -231,6 +231,7 @@ def get_args():
     parser.add_argument('--add_config', type=str, default=None,
                         help="full path to the yaml file containing the experiment's (hyper)parameters.")
     parser.add_argument('--grid_search', action='store_true')
+    parser.add_argument("--observer", type=str, default='mongodb', help="mongodb or file")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--load", type=str, default=None, help="full path to the model's weights")
     args = parser.parse_args()
