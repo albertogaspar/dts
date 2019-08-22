@@ -256,7 +256,7 @@ def load_data(fill_nan=None,
                 raise ValueError('Detrend cannot be applied with this type of split.')
             dataset['trend'] = trend_values
 
-        X = np.expand_dims(df[TARGET].values[:-1],-1) #[N,1]
+        X = np.expand_dims(df[TARGET].values,-1) #[N,1]
         if preprocessing:
             # init scaler using only information for training
             scaler, _ = transform(X[:train_len])
@@ -266,7 +266,7 @@ def load_data(fill_nan=None,
             scaler = None
         if exogenous_vars:
             ex_feat = add_exogenous_variables(df, one_hot=True)
-            X = np.concatenate([X[:,:-1], ex_feat]) # [N,F]
+            X = np.concatenate([X[:-1,:], ex_feat], axis=1) # [N,F]
 
         if is_train:
             data = train_valid_split(X)

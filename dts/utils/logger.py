@@ -27,4 +27,4 @@ DEFAULT_LOGGING = {
 }
 
 logging.config.dictConfig(DEFAULT_LOGGING)
-logger = logging.getLogger()
+logger = logging.getLogger('log')

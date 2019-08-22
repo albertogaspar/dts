@@ -18,6 +18,9 @@ def f_main(args=None):
 
             # call main script
             val_loss, test_loss, model_name = main_func(_run)
+            print('--------- TEST RESULTS ---------------')
+            print(test_loss)
+            print('--------------------------------------')
 
             # save the result metrics to db
             _run.info['model_metrics'] = dict(val_loss=val_loss, test_loss=test_loss)

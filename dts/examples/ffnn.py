@@ -5,6 +5,8 @@ You can chose bewteen:
     - Running a simple experiment
     - Running multiple experiments trying out diffrent combinations of hyperparamters (grid-search)
 """
+import warnings
+warnings.filterwarnings(action='ignore')
 
 from keras.callbacks import EarlyStopping, LambdaCallback
 from keras.regularizers import l2

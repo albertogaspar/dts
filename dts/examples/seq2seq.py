@@ -4,6 +4,8 @@ You can chose bewteen:
     - Running a simple experiment
     - Running multiple experiments trying out diffrent combinations of hyperparamters (grid-search)
 """
+import warnings
+warnings.filterwarnings(action='ignore')
 
 from keras.callbacks import EarlyStopping
 from dts import config
@@ -194,7 +196,6 @@ if __name__ == '__main__':
     if args.grid_search:
         run_grid_search(
             experimentclass=DTSExperiment,
-            #parameters=yaml.load(open(os.path.join(config['config'], 'seq2seq_gs.yaml'))),
             f_config=args.add_config,
             db_name=config['db'],
             ex_name='seq2seq_grid_search',

@@ -4,6 +4,9 @@ You can chose bewteen:
     - Running a simple experiment
     - Running multiple experiments trying out diffrent combinations of hyperparamters (grid-search)
 """
+import warnings
+warnings.filterwarnings(action='ignore')
+
 from keras.callbacks import EarlyStopping
 from keras.optimizers import Adam
 
@@ -163,7 +166,6 @@ if __name__ == '__main__':
     if grid_search:
         run_grid_search(
             experimentclass=DTSExperiment,
-            # parameters=yaml.load(open(os.path.join(config['config'], 'tcn_gs.yaml'))),
             f_config=args.add_config,
             db_name=config['db'],
             ex_name='tcn_grid_search',
@@ -176,7 +178,6 @@ if __name__ == '__main__':
             db_name=config['db'],
             ex_name='tcn',
             f_main=main,
-            # f_config=os.path.join(config['config'], 'tcn.yaml'),
             f_config=args.add_config,
             f_metrics=log_metrics,
             observer_type=args.observer)
