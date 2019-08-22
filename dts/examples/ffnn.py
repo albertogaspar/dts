@@ -180,7 +180,7 @@ if __name__ == '__main__':
             f_main=main,
             f_metrics=log_metrics,
             f_config=args.add_config,
-            observer_type='mongodb')
+            observer_type='file')
     else:
         run_single_experiment(
             experimentclass=DTSExperiment,
