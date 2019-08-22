@@ -25,35 +25,6 @@ to output a prediction for the following n<sub>O</sub> timesteps (see Figure bel
   <img src="./images/notation.png" width="70%" height="70%"/>
 </p>
 
-An example on how to generate _synthetic data_ useful for fitting a model:
-```python
-import numpy as np
-from dts.utils.split import *
-
-# Generate synthetic data
-n_features = 10
-X = np.random.uniform(0., 10., size=(10000, n_features))
-
-# Split data in train-test (and validation if needed)
-train_len = 6000
-valid_len = 0
-test_len = 4000
-train, _, test = simple_split(X, train_len=train_len, valid_len=valid_len, test_len=test_len)
-
-# Format data: 
-# window_size is the look-back, we set it to 7 days here (assuming a resolution of 1 hour for the data) 
-# horizon is the forecasting horizon, i.e. the number of steps we wants to predict. We set it to 1 day
-X_train, y_train = get_rnn_inputs(train, window_size=24*7, horizon=24, multivariate_output=False, shuffle=False)
-```
-X_train has shape _(n_train_samples, 24*7, n_features)_, y_train has shape _(n_train_samples, 24*7)_. if multivariate_output is set to True then
-y_train will have shape _(n_train_samples, 24, n_features)_. 
-
-With DTS you can model your input values in many diffrent ways and then feed them to your favourite 
-deep learning architectures. E.g.: 
-- you can decide to include **exogenous features** (like temperature readings) if they are available.
-
-- you can decide to apply **detrending** to the time series (see `dts.datasets.*.apply_detrend` for more details).
-
 #### Run Experiment
 ```bash
 python FILENAME.py --add_config FULLPATH_TO_YAML_FILE 
@@ -87,7 +58,14 @@ The model will be initilized with this weights before training.
 [Paper](https://www.sciencedirect.com/science/article/pii/S0169207016000133?via%3Dihub).
 If you use the GEFCom2014 you should cite this [paper](https://www.sciencedirect.com/science/article/pii/S0169207016000133?via%3Dihub) to acknowledge the source.
 
-To see a working example on one of this datasets check `dts.examples`.
+With DTS you can model your input values in many diffrent ways and then feed them to your favourite 
+deep learning architectures. E.g.: 
+- you can decide to include **exogenous features** (like temperature readings) if they are available.
+
+- you can decide to apply **detrending** to the time series (see `dts.datasets.*.apply_detrend` for more details).
+
+See [how to format your data](https://github.com/albertogaspar/dts/datasets/datasets.md) or check out the examples in `dts.examples` to know more about data formatting and the 
+possibilities offered by DTS.
 
 #### Available architectures
 Included architetures are:
