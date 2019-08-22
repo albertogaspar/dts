@@ -145,6 +145,7 @@ def load_data(fill_nan=None,
                         'It will be downloaded'
                         'This will take some time...')
             download()
+            df = load_dataset()
 
         if detrend:
             if split_type == 'default' and not is_train:
