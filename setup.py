@@ -16,6 +16,6 @@ setup(
     version='0.0.0',
     author='Alberto Gapsarin',
     install_requires=['keras', 'numpy', 'pandas', 'joblib', 'matplotlib',
-                      'tqdm', 'scipy', 'requests', 'sacred'],
+                      'tqdm', 'scipy', 'requests', 'sacred', 'pymongo'],
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
 )

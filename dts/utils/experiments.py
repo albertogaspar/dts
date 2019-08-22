@@ -108,7 +108,10 @@ class SacredWrapper():
         # init the experiment main
         @ex.main
         def ex_main(_run):
-            return main_wrapper(f_main, ex, f_ex_capture, self.sacred_db_name(), _run)
+            if observer_type == 'mongodb':
+                return main_wrapper(f_main, ex, f_ex_capture, self.sacred_db_name(), _run)
+            else:
+                f_main(ex, _run, f_ex_capture)
 
         self.ex = ex
 

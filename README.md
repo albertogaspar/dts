@@ -1,8 +1,9 @@
 # DTS - Deep Time-Series Forecasting
 
 DTS is a [Keras](https://keras.io/) library that provides multiple deep architectures aimed at multi-step time-series forecasting.
-The [Sacred](https://github.com/IDSIA/sacred) library is used to keep track of different experiments and allow their reproducibility. 
 
+The [Sacred](https://github.com/IDSIA/sacred) library is used to keep track of different experiments and allow their reproducibility. 
+If you have Tensorflow >= 1.14.0 then you need to check out this [issue](https://github.com/IDSIA/sacred/issues/493) .
 ## Installation
 DTS is compatible with Python 3.5+, and is tested on Ubuntu 16.04. 
 To install dts from source:
@@ -134,7 +135,8 @@ In the above documents are visualized using [MongoDB Compass](https://www.mongod
 
 ## Reference
 This is the code used for [Deep Learning for Time Series Forecasting: The Electric Load Case](https://arxiv.org/abs/1907.09207).
-Mind that the code has been changed a bit, thus you may notice some differences with the models described in the paper. 
+Mind that the code has been changed a bit, thus you may notice some differences with the models described in the paper.
+If you encounter any problem or have any doubt don't hesitate to contact me. 
 
 If you find it interesting it please consider citing us:
 ```
