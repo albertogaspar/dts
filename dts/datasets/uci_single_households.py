@@ -260,6 +260,8 @@ def load_data(fill_nan=None,
             scaler, _ = transform(X[:train_len])
             # actual preprocess
             _, X = transform(X, scaler)
+        else:
+            scaler = None
         if exogenous_vars:
             ex_feat = add_exogenous_variables(df, one_hot=True)
             X = np.concatenate([X[:,:-1], ex_feat]) # [N,F]
@@ -270,8 +272,8 @@ def load_data(fill_nan=None,
             data = train_test_split(X)
 
         dataset['scaler'] = scaler
-        dataset['train'] = data[0]
-        dataset['test'] = data[2]
+        dataset['train'] = np.array(data[0], dtype=np.float32)
+        dataset['test'] = np.array(data[2], dtype=np.float32)
         return dataset
 
 

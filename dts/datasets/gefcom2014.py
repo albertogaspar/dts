@@ -169,23 +169,24 @@ def load_data(fill_nan=None,
             scaler, _ = transform(X[:train_len])
             # actual preprocess
             _, X = transform(X, scaler)
-            if exogenous_vars:
-                # init scaler using only temperature information for training
-                X_temp, X_ex = add_exogenous_variables(df, one_hot=True)
-                scaler_temp, _ = transform(X_temp[:train_len], scaler_type='minmax')
-                _, X_temp = transform(X_temp, scaler_temp)
-                X = np.concatenate([X, X_temp, X_ex], axis=1)  # Load @ t-1, Datetime @ t, Temp @ t
+        else:
+            scaler = None
+        if exogenous_vars:
+            # init scaler using only temperature information for training
+            X_temp, X_ex = add_exogenous_variables(df, one_hot=True)
+            scaler_temp, _ = transform(X_temp[:train_len], scaler_type='minmax')
+            _, X_temp = transform(X_temp, scaler_temp)
+            X = np.concatenate([X, X_temp, X_ex], axis=1)  # Load @ t-1, Datetime @ t, Temp @ t
 
-            if is_train:
-                data = train_valid_split(X)
-            else:
-                data = train_test_split(X)
+        if is_train:
+            data = train_valid_split(X)
+        else:
+            data = train_test_split(X)
 
-            dataset['scaler'] = scaler
-            dataset['train'] = data[0]
-            dataset['test'] = data[2]
-            return dataset
-
+        dataset['scaler'] = scaler
+        dataset['train'] = np.array(data[0], dtype=np.float32)
+        dataset['test'] = np.array(data[2], dtype=np.float32)
+        return dataset
 
     else:
         logger.info('Fetching preprocessed data from disk...')
