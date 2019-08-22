@@ -11,7 +11,7 @@ git clone https://github.com/albertogaspar/dts.git
 cd dts
 pip install -e .
 ```
-The installation of [MongoDB](https://www.mongodb.com/) is not highly recommended.
+The installation of [MongoDB](https://www.mongodb.com/) is highly recommended.
 
 # What's in it & How to use
 
@@ -39,7 +39,7 @@ If True, multiple experiments are runned, each with a different combination of h
 The process terminates when all possible combinations of hyperparamers have been explored. 
 
 _add_config_: The experiment's hyperparamters should be define  as a yaml file in the config folder 
-(see [How to write a config file]() for more details). FULLPATH_TO_YAML_FILE is the fullpath to 
+(see [How to write a config file](https://github.com/albertogaspar/dts/blob/master/config) for more details). FULLPATH_TO_YAML_FILE is the fullpath to 
 the .yaml file that stores your configuration.
 The main function for your model should always look similar to this one:
 
@@ -64,7 +64,7 @@ deep learning architectures. E.g.:
 
 - you can decide to apply **detrending** to the time series (see `dts.datasets.*.apply_detrend` for more details).
 
-See [how to format your data](https://github.com/albertogaspar/dts/datasets/datasets.md) or check out the examples in `dts.examples` to know more about data formatting and the 
+See [how to format your data](https://github.com/albertogaspar/dts/blob/master/dts/datasets) or check out the examples in `dts.examples` to know more about data formatting and the 
 possibilities offered by DTS.
 
 #### Available architectures
