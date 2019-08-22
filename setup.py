@@ -14,7 +14,7 @@ here = path.abspath(path.dirname(__file__))
 setup(
     name='dts',
     version='0.0.0',
-    author='Alberto Gapsarin',
+    author='Alberto Gasparin',
     install_requires=['keras', 'numpy', 'pandas', 'joblib', 'matplotlib',
                       'tqdm', 'scipy', 'requests', 'sacred', 'pymongo'],
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),

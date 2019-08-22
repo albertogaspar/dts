@@ -5,7 +5,7 @@ from dts.datasets.utils import save_data,load_prebuilt_data
 from dts.utils.utils import set_datetime_index
 from dts.utils.split import *
 from sklearn.preprocessing import StandardScaler
-from sklearn.externals import joblib
+import warnings
 from datetime import datetime
 import requests, zipfile, io
 
@@ -256,7 +256,7 @@ def load_data(fill_nan=None,
                 raise ValueError('Detrend cannot be applied with this type of split.')
             dataset['trend'] = trend_values
 
-        X = np.expand_dims(df[TARGET].values,-1) #[N,1]
+        X = np.expand_dims(df[TARGET].values[:-1],-1) #[N,1]
         if preprocessing:
             # init scaler using only information for training
             scaler, _ = transform(X[:train_len])
@@ -320,17 +320,19 @@ def _add_holidays(df):
     :param df: the datafrme
     :return: the agumented dtaframe
     """
-    idx=[]
-    idx.extend(df[df.day == 1][df.month == 1].index.tolist())   # new year's eve
-    idx.extend(df[df.day == 8][df.month == 5].index.tolist())   # ww1 victory's day
-    idx.extend(df[df.day == 30][df.month == 5].index.tolist())  # ascension day
-    idx.extend(df[df.day == 14][df.month == 7].index.tolist())  # bastille day
-    idx.extend(df[df.day == 15][df.month == 8].index.tolist())  # assumption of mary
-    idx.extend(df[df.day == 1][df.month == 11].index.tolist())  # all saints
-    idx.extend(df[df.day == 11][df.month == 11].index.tolist()) # armsistice day
-    idx.extend(df[df.day == 25][df.month == 12].index.tolist()) # christams
-    df.loc[idx, 'holiday'] = 1
-    return df
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        idx=[]
+        idx.extend(df[df.day == 1][df.month == 1].index.tolist())   # new year's eve
+        idx.extend(df[df.day == 8][df.month == 5].index.tolist())   # ww1 victory's day
+        idx.extend(df[df.day == 30][df.month == 5].index.tolist())  # ascension day
+        idx.extend(df[df.day == 14][df.month == 7].index.tolist())  # bastille day
+        idx.extend(df[df.day == 15][df.month == 8].index.tolist())  # assumption of mary
+        idx.extend(df[df.day == 1][df.month == 11].index.tolist())  # all saints
+        idx.extend(df[df.day == 11][df.month == 11].index.tolist()) # armsistice day
+        idx.extend(df[df.day == 25][df.month == 12].index.tolist()) # christams
+        df.loc[idx, 'holiday'] = 1
+        return df
 
 
 def transform(X, scaler=None):
