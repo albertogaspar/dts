@@ -76,7 +76,7 @@ def load_data(fill_nan=None,
               preprocessing=True,
               detrend=False,
               exogenous_vars=False,
-              train_len=364 * 3 * SAMPLES_PER_DAY,
+              train_len=365 * 3 * SAMPLES_PER_DAY,
               test_len=365 * SAMPLES_PER_DAY,
               valid_len=0,
               split_type='simple',
@@ -120,19 +120,21 @@ def load_data(fill_nan=None,
 
     if split_type == 'simple':
         train_test_split = lambda x: simple_split(x, train_len=None, valid_len=0, test_len=test_len)
-        train_valid_split = lambda x: simple_split(train_test_split(x)[0],
-                                            train_len=train_len,
-                                            valid_len=0,
-                                            test_len=valid_len)
+        train_valid_split = lambda x: simple_split(
+            train_test_split(x)[0],
+            train_len=len(train_test_split(x)[0]) - valid_len,
+            valid_len=0,
+            test_len=valid_len)
     elif split_type == 'multi':
         train_test_split = lambda x: multiple_splits(x, train_len=train_len + valid_len, valid_len=0, test_len=test_len)
         train_valid_split = lambda x: [x[0][:, :train_len, :], None, x[0][:, train_len:, :]]
     elif split_type == 'default':
         train_test_split =  lambda x: simple_split(x, train_len=None, valid_len=0, test_len=int(0.1*df.shape[0]))
-        train_valid_split = lambda x: multiple_splits(train_test_split(x)[0],
-                                               train_len=5 * 31 * SAMPLES_PER_DAY,
-                                               valid_len=0,
-                                               test_len=31 * SAMPLES_PER_DAY)
+        train_valid_split = lambda x: multiple_splits(
+            train_test_split(x)[0],
+            train_len=5 * 31 * SAMPLES_PER_DAY,
+            valid_len=0,
+            test_len=31 * SAMPLES_PER_DAY)
     else:
         raise ValueError('{} is not a valid split type.'.format(split_type))
 
