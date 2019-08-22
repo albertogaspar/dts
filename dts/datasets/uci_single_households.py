@@ -41,12 +41,18 @@ def process_csv():
     Parse the datetime field, Sort the values accordingly and save the new dataframe to disk
     """
     df = pd.read_csv(os.path.join(config['data'],'UCI_household_power_consumption.csv'), sep=';')
-    df['datetime'] = list(map(lambda d: datetime.combine(datetime.strptime(d[0], '%d/%m/%Y').date(),
+    df[DATETIME] = list(map(lambda d: datetime.combine(datetime.strptime(d[0], '%d/%m/%Y').date(),
                                                            datetime.strptime(d[1], '%H:%M:%S').time()),
                               df[['Date', 'Time']].values))
-    df = df.sort_values(['datetime']).reset_index(drop=True)
-    df = df[['datetime', 'Global_active_power']]
-    df['datetime'] = pd.to_datetime(df['datetime'], utc=False)
+    df = df.sort_values([DATETIME]).reset_index(drop=True)
+    df = df[[DATETIME, TARGET]]
+    df[DATETIME] = pd.to_datetime(df[DATETIME], utc=False)
+    def parse(x):
+        try:
+            return np.float64(x)
+        except:
+            return np.nan
+    df[TARGET] = df[TARGET].apply(lambda x: parse(x))
     df.to_csv(os.path.join(config['data'], 'UCI_household_power_consumption_synth.csv'), index=False)
 
 
