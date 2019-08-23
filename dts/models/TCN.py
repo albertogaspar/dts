@@ -62,10 +62,20 @@ def tcn_residual_block(inputs,
                      dilation_rate=dilation_rate,
                      activation='relu')(inputs)
     outputs = SpatialDropout1D(dropout_rate, trainable=True)(outputs)
-    # skip connection
+    outputs = Conv1D(filters=filters,
+                     kernel_size=kernel_size,
+                     use_bias=use_bias,
+                     bias_initializer=bias_initializer,
+                     bias_regularizer=bias_regularizer,
+                     kernel_initializer=kernel_initializer,
+                     kernel_regularizer=kernel_regularizer,
+                     padding='causal',
+                     dilation_rate=dilation_rate,
+                     activation='relu')(outputs)
+    outputs = SpatialDropout1D(dropout_rate, trainable=True)(outputs)
     skip_out = Conv1D(filters=filters, kernel_size=1, activation='linear')(inputs)
-    residual_out = Add()([outputs, inputs])
-    return skip_out, residual_out
+    residual_out = Add()([outputs, skip_out])
+    return residual_out
 
 
 def wavenet_residual_block(inputs,
@@ -124,10 +134,11 @@ def wavenet_residual_block(inputs,
     sig_out = Activation('sigmoid')(outputs)
     tanh_out = Activation('tanh')(outputs)
     outputs = Multiply()([sig_out, tanh_out])
+    skip_out = Conv1D(filters=filters, kernel_size=1, activation='linear')(outputs)
     if K.int_shape(outputs) != K.int_shape(inputs):
         inputs = Conv1D(filters=1, kernel_size=1, activation='linear')(inputs)
-    residual_out = Add()([outputs, inputs])
-    return residual_out
+    residual_out = Add()([skip_out, inputs])
+    return skip_out, residual_out
 
 
 def simple_residual_block(inputs,
@@ -182,7 +193,7 @@ def simple_residual_block(inputs,
                      padding='causal',
                      dilation_rate=dilation_rate,
                      activation='relu')(inputs)
-    # outputs = self.dropout(outputs)
+    outputs = Dropout(dropout_rate)(outputs)
     if K.int_shape(outputs) != K.int_shape(inputs):
         inputs = Conv1D(filters=1, kernel_size=1, activation='linear')(inputs)
     residual_out = Add()([outputs, inputs])
@@ -192,7 +203,6 @@ def simple_residual_block(inputs,
 def conditional_block(inputs,
                       filters=1,
                       kernel_size=2,
-                      dilation_rate=None,
                       kernel_initializer='glorot_normal',
                       bias_initializer='glorot_normal',
                       kernel_regularizer=None,
@@ -306,17 +316,17 @@ class Wavenet(TemporalConvNet):
 
     def call(self, inputs):
         inputs = Conv1D(filters=self.filters,
-                            kernel_size=self.kernel_size,
-                            use_bias=self.use_bias,
-                            bias_initializer=self.bias_initializer,
-                            bias_regularizer=self.bias_regularizer,
-                            kernel_initializer=self.kernel_initializer,
-                            kernel_regularizer=self.kernel_regularizer,
-                            padding='causal',
-                            dilation_rate=self.dilation_rate,
-                            activation='linear')(inputs)
+                        kernel_size=self.kernel_size,
+                        use_bias=self.use_bias,
+                        bias_initializer=self.bias_initializer,
+                        bias_regularizer=self.bias_regularizer,
+                        kernel_initializer=self.kernel_initializer,
+                        kernel_regularizer=self.kernel_regularizer,
+                        padding='causal',
+                        dilation_rate=self.dilation_rate,
+                        activation='linear')(inputs)
         skip_outs = []
-        for i in range(1, self.layers):
+        for i in range(1, self.layers+1):
             # output shape = (batch_size, n_samples, out_channels)
             skip_out, res_out = wavenet_residual_block(inputs,
                                                        filters=self.filters,
@@ -331,14 +341,14 @@ class Wavenet(TemporalConvNet):
             inputs = res_out
         output = Add()(skip_outs)
         output = Activation('relu')(output)
+        # output = Conv1D(filters=1,
+        #                 kernel_size=1,
+        #                 activation='relu',
+        #                 kernel_regularizer=self.kernel_regularizer)(output)
         output = Conv1D(filters=1,
-                            kernel_size=1,
-                            activation='relu',
-                            kernel_regularizer=self.kernel_regularizer)(output)
-        output = Conv1D(filters=1,
-                            kernel_size=1,
-                            activation='linear',
-                            kernel_regularizer=self.kernel_regularizer)(output)
+                        kernel_size=1,
+                        activation='linear',
+                        kernel_regularizer=self.kernel_regularizer)(output)
         if self.return_sequence:
             output = Lambda(lambda x: x[:, :, 0])(output)
         else:
@@ -363,7 +373,7 @@ class ConditionalTCN(TemporalConvNet):
                                    bias_regularizer=self.bias_regularizer,
                                    kernel_initializer=self.kernel_initializer,
                                    kernel_regularizer=self.kernel_regularizer,
-                                   dilation_rate=1)
+                                   )
         for i in range(1, self.layers):
             # output shape = (batch_size, n_samples, out_channels)
             outputs = simple_residual_block(inputs,

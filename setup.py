@@ -15,7 +15,8 @@ setup(
     name='dts',
     version='0.0.0',
     author='Alberto Gasparin',
-    install_requires=['keras', 'numpy', 'pandas', 'joblib', 'matplotlib',
-                      'tqdm', 'scipy', 'requests', 'sacred', 'pymongo'],
+    install_requires=['numpy', 'pandas', 'joblib', 'matplotlib', 'pyyaml',
+                      'tqdm', 'scipy', 'requests', 'sacred', 'pymongo',
+                      'scikit-learn'],
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
 )
