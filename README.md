@@ -3,16 +3,36 @@
 DTS is a [Keras](https://keras.io/) library that provides multiple deep architectures aimed at multi-step time-series forecasting.
 
 The [Sacred](https://github.com/IDSIA/sacred) library is used to keep track of different experiments and allow their reproducibility. 
-If you have Tensorflow >= 1.14.0 then you need to check out this [issue](https://github.com/IDSIA/sacred/issues/493) .
+
 ## Installation
 DTS is compatible with Python 3.5+, and is tested on Ubuntu 16.04. 
+
+The setup.py script of DTS will not attempt to install Sacred, Keras and a backend for it. 
+Thus, **before installing DTS**, you have to  manually install:
+- The CPU or GPU version of Tensorflow (GPU recommended) <=1.14.0
+- Keras <= 2.2.4
+- Sacred <=0.7.5
+- (Optional) [MongoDB](https://www.mongodb.com/) is also recommended.
+
+This choice has been taken in order to avoid any possible problem for the user. If you are already a Keras/Tesorflow user
+mind that if your version of Tensorflow is greater or equal to 1.14.0 then you need to check out this [issue](https://github.com/IDSIA/sacred/issues/493) to install sacred correctly.
+
+I have tested dts with the following dependencies:
+
+|      ENV 1       |      ENV 2        |
+|:----------------:|:-----------------:|                     
+|numpy==1.14.2     | numpy==1.17.0     |
+|tensorflow==1.12.0| tensorflow==1.14.0|
+|keras==2.1.6      | keras==2.2.4      |
+|sacred==0.7.4     | sacred==0.7.5     |
+
 To install dts from source:
 ```
 git clone https://github.com/albertogaspar/dts.git
 cd dts
 pip install -e .
 ```
-The installation of [MongoDB](https://www.mongodb.com/) is highly recommended.
+
 
 # What's in it & How to use
 

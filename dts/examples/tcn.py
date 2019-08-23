@@ -46,7 +46,7 @@ def main(_run):
 
     data = dataset.load_data(fill_nan='median',
                              preprocessing=True,
-                             split_type='default',
+                             split_type='simple',
                              is_train=params['train'],
                              detrend=params['detrend'],
                              exogenous_vars=params['exogenous'],
