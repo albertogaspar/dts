@@ -77,8 +77,8 @@ def main(_run):
                    tcn_type=params['tcn_type'])
 
     if params['exogenous']:
-        exog_var_train = y_train[:, :, 1:]  # [n_samples, 1, n_features]
-        y_train = y_train[:, :, 0]  # [n_samples, 1, 1]
+        exog_var_train = y_train[:, :, 1:]  # [n_samples, horizon, n_features]
+        y_train = y_train[:, :, 0]          # [n_samples, horizon]
         conditions_shape = (exog_var_train.shape[1], exog_var_train.shape[-1])
 
         X_test, y_test = get_rnn_inputs(test,
@@ -86,8 +86,8 @@ def main(_run):
                                         horizon=params['output_sequence_length'],
                                         shuffle=False,
                                         multivariate_output=True)
-        exog_var_test = y_test[:, :, 1:]  # [n_samples, 1, n_features]
-        y_test = y_test[:, :, 0]  # [n_samples, 1, 1]
+        exog_var_test = y_test[:, :, 1:]  # [n_samples, horizon, n_features]
+        y_test = y_test[:, :, 0]          # [n_samples, horizon]
     else:
         X_test, y_test = get_rnn_inputs(test,
                                         window_size=params['input_sequence_length'],
@@ -118,7 +118,7 @@ def main(_run):
     model.compile(optimizer=optimizer, loss=['mse'], metrics=metrics)
     callbacks = [EarlyStopping(patience=50, monitor='val_loss')]
 
-    if params['exogenous']:
+    if params['exogenous'] and params['tcn_type'] == 'conditional_tcn':
         history = model.fit([X_train, exog_var_train], y_train,
                             validation_split=0.1,
                             batch_size=params['batch_size'],
@@ -149,7 +149,7 @@ def main(_run):
     fn_inverse_test = lambda x: dataset.inverse_transform(x, scaler=scaler, trend=trend)
     fn_plot = lambda x: plot(x, dataset.SAMPLES_PER_DAY, save_at=None)
 
-    if params['exogenous']:
+    if params['exogenous'] and params['tcn_type'] == 'conditional_tcn':
         val_scores = tcn.evaluate(history.validation_data[:-1], fn_inverse=fn_inverse_val)
         test_scores = tcn.evaluate([[X_test, exog_var_test], y_test], fn_inverse=fn_inverse_test, fn_plot=fn_plot)
     else:

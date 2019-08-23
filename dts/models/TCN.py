@@ -496,7 +496,7 @@ class TCNModel:
         """
         Create a Model that takes as inputs:
             - 3D Tensor of shape (batch_size, window_size, n_features)
-            - (optional) - 3D Tensor of shape (batch_size, horizon, n_exog_features)
+            - (optional) 3D Tensor of shape (batch_size, horizon, n_features-1)
         and outputs:
             - 2D tensor of shape (batch_size, horizon)
 
@@ -508,8 +508,6 @@ class TCNModel:
             (window_size, n_features)
         :param use_final_dense:
             if True transfrom output using a Dense Net
-        :return:
-            (batch, horizon)
         """
         # inputs
         self.horizon = horizon
@@ -517,11 +515,11 @@ class TCNModel:
 
         # define model
         if self.tcn_type == 'conditional_tcn':
-            if conditions_shape is not None:
+            if conditions_shape is None:
+                output = self.tcn(inputs)
+            else:
                 conditions = Input(shape=conditions_shape)
                 output = self.tcn([inputs, conditions])
-            else:
-                output = self.tcn(inputs)
         else:
             output = self.tcn(inputs)
 
@@ -530,6 +528,8 @@ class TCNModel:
             output = Dense(horizon)(output)
         elif self.return_sequence:
             output = Lambda(lambda x: x[:, -horizon:])(output)
+        else:
+            output = Lambda(lambda x: x[:, -1:])(output)
 
         # build model
         if conditions_shape is None:
@@ -551,21 +551,36 @@ class TCNModel:
         """
         Recursive Forecast. To be used with return_sequence = False and forecasting horizon > 1.
 
-        :param inputs: array
+        :param inputs: list
             Input array to be used for prediction
-            (batch_size, window_size, n_feartures)
-        :param horizon: int
-            The forecasting horizon
-        :param exogenous: array
-            Exogenous features to be included for prediction pruposes
-            (batch_size, 1, n_exog_features)
+            (batch_size, window_size, n_features)
+
+            (optional) Exogenous features to be included for prediction pruposes
+            (batch_size, horizon, n_features - 1)
         :return:
         """
-        outputs = np.zeros((inputs.shape[0], self.out_shape))  # (batch_size, pred_steps)
-        for i in range(self.out_shape):
-            out = self.model.predict(inputs) # [batch, 1]
+        try:
+            inputs, conditions = inputs
+        except ValueError:
+            conditions = None
+
+        outputs = np.zeros((inputs.shape[0], self.horizon))  # (batch_size, pred_steps)
+        for i in range(self.horizon):
+            if conditions is not None:
+                next_exog = conditions[:, i:i + 1, :]          # exog at time i, (batch_size, 1, n_features - 1)
+                if self.tcn_type == 'conditional_tcn':
+                    out = self.model.predict([inputs, next_exog])  # output at time i, (batch_size, 1)
+                else:
+                    out = self.model.predict(inputs)
+                inputs = np.concatenate([inputs[:, 1:, :],
+                                         np.concatenate([np.expand_dims(out,-1), next_exog], -1)],
+                                        1)                     # (batch_size, window_size, n_features)
+            else:
+                out = self.model.predict(inputs)  # prediction at i, (batch, 1)
+                inputs = np.concatenate([inputs[:, 1:, :],
+                                         np.expand_dims(out, -1)],
+                                        1)        # (batch_size, window_size, 1)
             outputs[:, i] = out[:, 0]
-            inputs = np.concatenate([inputs[:, 1:, :], np.expand_dims(out, -1)], 1)
         return outputs
 
     def evaluate(self, data, fn_inverse=None, fn_plot=None):

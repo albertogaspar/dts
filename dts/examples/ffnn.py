@@ -154,7 +154,7 @@ def main(_run):
 
     if params['recursive_forecast']:
         val_scores = []
-        txt = "When RNN is trained in Recursive mode training and inference are different. Specifically, training is "\
+        txt = "When FFNN is trained in Recursive mode training and inference are different. Specifically, training is "\
               "a 1 step forecasting problem and inference is multi step forecasting problem. Thus, "\
               "validation results will not be provided as they are not comparable with test results"
         logger.warn(txt)

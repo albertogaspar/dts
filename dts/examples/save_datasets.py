@@ -2,7 +2,7 @@ from dts.datasets import gefcom2014, uci_single_households
 from matplotlib import pyplot as plt
 from itertools import product
 
-ds = 'gefcom'
+ds = 'uci'
 
 if __name__ == '__main__':
 
@@ -13,10 +13,10 @@ if __name__ == '__main__':
         dataset = gefcom2014
         df = dataset.load_dataset()
 
-    split_type = 'simple'
+    split_type = 'default'
     detrend_vals = [True, False]
-    exogenous_vals = [True, False]
-    is_train_vals = [True, False]
+    exogenous_vals = [False]
+    is_train_vals = [False]
     for detrend, exogenous, is_train in product(detrend_vals, exogenous_vals, is_train_vals):
         data = dataset.load_data(fill_nan='median',
                                  preprocessing=True,
@@ -27,8 +27,9 @@ if __name__ == '__main__':
                                  exogenous_vars=exogenous)
         scaler, train, test, trend = data['scaler'], data['train'], data['test'], data['trend']
 
-        plt.plot(df[dataset.TARGET].values)
-        plt.plot(dataset.inverse_transform(train, scaler=scaler, trend=trend)[0])
+        plt.plot(df[dataset.TARGET][:len(train)].values, color='orange')
+        plt.show()
+        plt.plot(dataset.inverse_transform(train[:,:1], scaler=scaler, trend=trend[0]))
         plt.show()
 
         dataset.save_data(data=data, split_type=split_type, exogenous_vars=exogenous, is_train=is_train,

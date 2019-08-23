@@ -99,14 +99,14 @@ possibilities offered by DTS.
 #### Available architectures
 Included architetures are:
 - **Recurrent Neural Networks** (Elmann, LSTM, GRU) with different trainig procedure:
-  - _MIMO_: a Dense Network is used to map the last state of the RNN to the output space of size n<sub>O</sub>. 
+  - [X] _MIMO_: a Dense Network is used to map the last state of the RNN to the output space of size n<sub>O</sub>. 
     The training and inference procedures are the same.
     
     <p align="center">
       <img src="./images/rnn_MIMO.png" width="50%" height="50%"/>
     </p>
 
-  - _Recurrent_: The RNN is trained to predict the next step, i.e. the output space during training has size 1. During inference, 
+  - [X] _Recursive_: The RNN is trained to predict the next step, i.e. the output space during training has size 1. During inference, 
     the network is fed with (part of) the input plus it's own predictions in a recurrent fashion until an ouput vector of length 
     n<sub>O</sub> is obtained.
   
@@ -121,7 +121,9 @@ Included architetures are:
     </p>
 
     different training procedure are available (see [Professor Forcing: A New Algorithm for Training Recurrent Networks](https://arxiv.org/abs/1610.09038) for more details)
-    - _Teacher Forcing_ and _Self-Generated Samples_:
+    - [X] _Teacher Forcing_ 
+    - [X] _Self-Generated Samples_
+    - [ ] _Professor Forcing_ : TODO
       
     <p align="center">
       <img src="./images/seq2seqTFSG.png" width="60%" height="60%"/>
@@ -133,20 +135,29 @@ Included architetures are:
       <img src="./images/TCN.png" width="70%" height="70%"/>
     </p>
 
-  - [Wavenet](https://arxiv.org/abs/1609.03499)
-  - [TCN](https://arxiv.org/abs/1803.01271)
-  - [Conditional TCN](https://arxiv.org/abs/1703.04691)
+  - [X] _MIMO_ training/inference:
+      - [X] [Wavenet](https://arxiv.org/abs/1609.03499)
+      - [X] [TCN](https://arxiv.org/abs/1803.01271)
+      - [X] [Conditional TCN](https://arxiv.org/abs/1703.04691)
+  - [ ] _Recursive_ training/inference: TODO (The methods to perform prediction with this
+  strategy is available in `dts.models.TCN.py` but has not been tested and there is no example
+  to use a TCN with this mode in `dts.examples.tcn.py`)
+  
 
-- **Feedforward Neural Networks** (both MIMO and Recurrent)
-- **ResNet** (both MIMO and Recurrent): a feedforward neural network with residual connections.
+- **Feedforward Neural Networks**: 
+    - [X] _MIMO_ training/inference:
+    - [X] _Recursive_ training/inference
+- **ResNet** a feedforward neural network with residual connections:
+    - [X] _MIMO_ training/inference:
+    - [X] _Recursive_ training/inference
 
 
-## Project Structure
+## Project Structure & TODO list
 - **dts**: contains models, utilities and example to train and test differnt deep learning models.
 - **data**: contains raw data and .npz,.npy data (already preprocessed data). 
 - **config**: yaml file to be used for grid search of hyperparamteres for all architectures.
-- **weights**: conatins models' weights. If you use sacred using the mongodb observer then, the _artifactID_ field in each document 
-contains the name of the trained model that achieved the presented performance. 
+- **weights**: conatins models' weights. If you use sacred using the the _artifactID_ field in each document/json file 
+contains the name of the trained model that achieved the related performance. 
 - **log**: If you use sacred without mongodb then all the relevant files are stored in this directory.
 
 #### Sacred Collected Information
