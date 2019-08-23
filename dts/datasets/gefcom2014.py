@@ -142,10 +142,10 @@ def load_data(fill_nan=None,
         logger.info('Fetching and preprocessing data. This will take a while...')
         try:
             df = load_dataset()
-        except:
-            logger.info('The dataset seems to be unavailable on your disk. '
-                        'It will be downloaded'
-                        'This will take some time...')
+        except FileNotFoundError:
+            logger.info('The dataset seems to be unavailable on your disk at {}. \n'
+                        'Downloading...'.format(
+                os.path.join(config['data'], 'gefcom2014.csv')))
             download()
             df = load_dataset()
 
@@ -195,7 +195,7 @@ def load_data(fill_nan=None,
         try:
             return load_prebuilt_data(split_type=split_type, exogenous_vars=exogenous_vars, detrend=detrend,
                                       is_train=is_train, dataset_name=NAME)
-        except FileNotFoundError as e:
+        except FileNotFoundError:
             logger.warn('An already preprocessed version of the data do not exists on disk. '
                         'The train/test data will be created now.')
             return load_data(fill_nan, preprocessing, detrend, exogenous_vars, train_len, test_len,
