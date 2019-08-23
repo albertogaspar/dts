@@ -1,0 +1,15 @@
+epochs: 1
+batch_size: 1024
+input_sequence_length: 96
+output_sequence_length: 24
+dropout: 0.2
+layers: [30,30]
+l2_reg: 0.005
+learning_rate: 0.001
+preprocessing: True
+exogenous: True, False
+dataset: 'gefcom'
+ffnn_type: 'simple'
+train: False
+detrend: True
+recursive_forecast: True
