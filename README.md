@@ -59,17 +59,25 @@ _grid_search_: defines whether or not you are searching for the best hyperparamt
 If True, multiple experiments are runned, each with a different combination of hyperparamters. 
 The process terminates when all possible combinations of hyperparamers have been explored. 
 
-_add_config_: The experiment's hyperparamters should be define  as a yaml file in the config folder 
+_add_config_: The experiment's hyperparamters should be defined as a yaml file in the config folder 
 (see [How to write a config file](https://github.com/albertogaspar/dts/blob/master/config) for more details). FULLPATH_TO_YAML_FILE is the fullpath to 
 the .yaml file that stores your configuration.
 The main function for your model should always look similar to this one:
+
+_observer_: all the important information in an experiment can be stored either in MongoDB 
+(default choice) or in multiple files (txt and json) inside a given folder (`dts/logs/sacred/`).
+ Mongo Observer which stores all information in a MongoDB
+If you want to use the file-based logger then launch the script with the additional argument `--observer file`
+(once again, the default choice is `--observer mongodb`)
 
 If you want to train a model using **pretrained weights** just run the model providing the paramter --load 
 followed by the fullpath to the file containing the weights.
 ```bash
 python FILENAME.py --add_config FULLPATH_TO_YAML_FILE --load FULLPATH_TO_WEIGHTS 
 ```
-The model will be initilized with this weights before training. 
+The model will be initilized with this weights before training.
+
+ 
 
 #### Datasets
 - **Individual household electric power consumption Data Set**: Measurements of electric power consumption in _one household_ with a one-minute sampling rate over a period of almost 4 years.

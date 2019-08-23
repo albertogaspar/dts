@@ -420,27 +420,11 @@ class TCN(TemporalConvNet):
 
 class TCNModel:
     """
-    Utility class to create a Model using a predefined TCN Architecture.
+    Utility class to create a Keras Model using a predefined TCN Architecture.
     Available architectures are:
         - Wavenet
         - TCN
         - ConditionalTCN
-
-    # Arguments
-        filters: Integer, the dimensionality of the output space
-            (i.e. the number of output filters in the convolution).
-        kernel_size: An integer or tuple/list of a single integer,
-            specifying the length of the 1D convolution window.
-        dilation_rate: an integer or tuple/list of a single integer, specifying
-            the dilation rate to use for dilated convolution.
-            Usually dilation rate increases exponentially with the depth of the network.
-        use_bias: Boolean, whether the layer uses a bias vector.
-        kernel_initializer: Initializer for the `kernel` weights matrix
-        bias_initializer: Initializer for the bias vector
-        kernel_regularizer: Regularizer function applied to the `kernel` weights matrix
-        bias_regularizer: Regularizer function applied to the bias vector
-            (see [regularizer](../regularizers.md)).
-        tcn_type: The TCN architecture that has to be used
     """
 
     def __init__(self,
@@ -456,6 +440,23 @@ class TCNModel:
                  dropout_rate=0.0,
                  return_sequence=True,
                  tcn_type='conditional_tcn'):
+        """
+        :param layers: int
+            Number of layers for the network
+        :param filters: int
+            the dimensionality of the output space
+            (i.e. the number of output filters in the convolution).
+        :param kernel_size: int or tuple
+            the length of the 1D convolution window
+        :param dilation_rate: int
+            the dilation rate to use for dilated convolution.
+            Usually dilation rate increases exponentially with the depth of the network.
+        :param return_sequence: bool
+            if True the network output is (batch_size, horizon) ~MIMO training
+            else,  the network output is (batch_size, 1) ~Rec training
+        :param tcn_type: str
+            The TCN architecture that has to be used
+        """
         self.layers = layers
         self.dilation_rate = dilation_rate
         self.filters = filters
@@ -491,21 +492,27 @@ class TCNModel:
         else:
             self.tcn = TCN(**params)
 
-    def build_model(self, input_shape, output_shape, conditions_shape=None, use_final_dense=False):
+    def build_model(self, input_shape, horizon, conditions_shape=None, use_final_dense=False):
         """
+        Create a Model that takes as inputs:
+            - 3D Tensor of shape (batch_size, window_size, n_features)
+            - (optional) - 3D Tensor of shape (batch_size, horizon, n_exog_features)
+        and outputs:
+            - 2D tensor of shape (batch_size, horizon)
+
         :param input_shape:
-            (batch, steps, n_features)`
-        :param output_shape:
-            (batch, horizon, 1)
+            (window_size, n_features)`
+        :param horizon: int
+            The forecasting horizon
         :param conditions_shape:
-            (batch, window_size, n_features)
+            (window_size, n_features)
         :param use_final_dense:
             if True transfrom output using a Dense Net
         :return:
             (batch, horizon)
         """
         # inputs
-        self.out_shape = output_shape
+        self.horizon = horizon
         inputs = Input(shape=input_shape)
 
         # define model
@@ -520,9 +527,9 @@ class TCNModel:
 
         # outputs
         if self.return_sequence and use_final_dense:
-            output = Dense(output_shape[0])(output)
+            output = Dense(horizon)(output)
         elif self.return_sequence:
-            output = Lambda(lambda x: x[:, -output_shape[0]:])(output)
+            output = Lambda(lambda x: x[:, -horizon:])(output)
 
         # build model
         if conditions_shape is None:
@@ -537,18 +544,21 @@ class TCNModel:
         if self.return_sequence:
             return self.model.predict(inputs)
         else:
-            return self._predict_rec(inputs)
-
+            raise NotImplementedError
+            # return self._predict_rec(inputs)
 
     def _predict_rec(self, inputs):
         """
-        Recursive Forecast. To be used whith return_sequence = False and forecasting horizon > 1.
+        Recursive Forecast. To be used with return_sequence = False and forecasting horizon > 1.
+
         :param inputs: array
             Input array to be used for prediction
+            (batch_size, window_size, n_feartures)
         :param horizon: int
             The forecasting horizon
         :param exogenous: array
             Exogenous features to be included for prediction pruposes
+            (batch_size, 1, n_exog_features)
         :return:
         """
         outputs = np.zeros((inputs.shape[0], self.out_shape))  # (batch_size, pred_steps)
@@ -559,10 +569,6 @@ class TCNModel:
         return outputs
 
     def evaluate(self, data, fn_inverse=None, fn_plot=None):
-        """
-        Evaluate model
-        :return:
-        """
         try:
             X, y = data
             y_hat = self.predict(X)

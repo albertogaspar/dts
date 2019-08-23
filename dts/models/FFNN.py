@@ -50,9 +50,9 @@ class FFNN:
     def model_inputs(self, input_shape, conditions_shape=None):
         """
         :param input_shape: np.array
-            (batch, window_size, n_features)
+            (window_size, n_features)
         :param conditions_shape: np.array
-            (batch, horizon, n_features)
+            (horizon, n_features)
         :return: a tuple containing:
             - a list containing all the Input Layers needed by the model
             - the tensor that has to be feeded to the subsequent layers of the archotecture

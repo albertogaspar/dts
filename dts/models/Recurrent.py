@@ -58,10 +58,6 @@ class RecurrentNN(object):
 class RecurrentNN_MIMO(RecurrentNN):
     """
     Recurrent Neural network using MIMO forecasting startegy.
-    The whole model can be summarized as follow:
-        layers        : Input     ->  Deep RNN   -> Dense
-        output shapes : (B, T, F)     (B, H)     (B, `horizon`)
-    [B = batch_size, T = window size, F = number of features, H = rnn's hidden units]
     """
 
     def build_model(self, input_shape, horizon, exogenous_shape=None):
@@ -78,6 +74,7 @@ class RecurrentNN_MIMO(RecurrentNN):
             The forecasting horizon
         :param conditions_shape:
             (horizon, n_features)
+        :return: a keras Model
         """
         self.horizon = horizon
         inputs = Input(shape=input_shape, dtype='float32', name='input')
@@ -103,6 +100,12 @@ class RecurrentNN_MIMO(RecurrentNN):
         return self.model
 
     def predict(self, inputs):
+        """
+        :param inputs: np.array
+            (batch_size, window_size, n_features)
+        :return: np.array
+            (batch_size, horizon)
+        """
         return self.model.predict(inputs)
 
     def evaluate(self, inputs, fn_inverse=None, fn_plot=None):
@@ -137,7 +140,7 @@ class RecurrentNN_MIMO(RecurrentNN):
 class RecurrentNN_Rec(RecurrentNN):
     """
     Recurrent Neural network using Recursive forecasting startegy.
-    The model's training and predictions phase differs.
+    The model's training and predictions phase are different.
     """
 
     def __init__(self, *args, **kwargs):
@@ -155,6 +158,7 @@ class RecurrentNN_Rec(RecurrentNN):
             (window_size, n_features)
         :param horizon: int
             The forecasting horizon
+        :return: a keras Model
         """
         self.horizon = horizon
         inputs = Input(shape=input_shape, dtype='float32')
@@ -173,7 +177,8 @@ class RecurrentNN_Rec(RecurrentNN):
         :param input: np.array
             (batch_size, window_size, n_features), n_features is supposed to be 1 (univariate time-series)
         :param exogenous: np.array
-            (batch_size, window_size, n_exog_features)
+            exogenous feature for the loads to be predicted
+            (batch_size, horizon, n_exog_features)
         :return: np.array
             (batch_size, horizon)
         """

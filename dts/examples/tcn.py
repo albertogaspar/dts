@@ -73,6 +73,7 @@ def main(_run):
                    bias_regularizer=l2(params['l2_reg']),
                    dilation_rate=params['dilation'],
                    use_bias=False,
+                   return_sequence=True,
                    tcn_type=params['tcn_type'])
 
     if params['exogenous']:
@@ -105,7 +106,7 @@ def main(_run):
         trend = y_trend_test
 
     model = tcn.build_model(input_shape=(X_train.shape[1], X_train.shape[-1]),
-                            output_shape=(params['output_sequence_length'],),
+                            horizon=params['output_sequence_length'],
                             conditions_shape=conditions_shape,
                             use_final_dense=True)
 

@@ -47,6 +47,7 @@ def main(_run):
                              split_type='simple',
                              is_train=params['train'],
                              detrend=params['detrend'],
+                             exogenous_vars=params['exogenous'],
                              use_prebuilt=True)
     scaler, train, test, trend = data['scaler'], data['train'], data['test'], data['trend']
     if not params['detrend']:
@@ -147,7 +148,9 @@ def main(_run):
         # decoder_target_data = np.squeeze(decoder_target_data)
         seq2seq.build_prediction_model((1, decoder_input_data.shape[-1]))
         if params['exogenous']:
-            val_scores = seq2seq.evaluate(history.validation_data[:-1],
+            val_scores = seq2seq.evaluate([history.validation_data[0],
+                                           history.validation_data[1][:,:,1:],
+                                           history.validation_data[2]],
                                           fn_inverse=fn_inverse_val,
                                           horizon=params['output_sequence_length'])
             test_scores = seq2seq.evaluate([encoder_input_data,

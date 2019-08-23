@@ -16,7 +16,8 @@ class Seq2SeqBase:
     Base class for a RNN-based Sequnece to Sequence model (for time-series prediction)
     """
 
-    def __init__(self, encoder_layers,
+    def __init__(self,
+                 encoder_layers,
                  decoder_layers,
                  output_sequence_length,
                  dropout=0.0,
@@ -25,8 +26,8 @@ class Seq2SeqBase:
         """
         :param encoder_layers: list
             encoder (RNN) architecture: [n_hidden_units_1st_layer, n_hidden_units_2nd_layer, ...]
-        :param decoder_layers:
-        decoder (RNN) architecture: [n_hidden_units_1st_layer, n_hidden_units_2nd_layer, ...]
+        :param decoder_layers: list
+            decoder (RNN) architecture: [n_hidden_units_1st_layer, n_hidden_units_2nd_layer, ...]
         :param output_sequence_length: int
             number of timestep to be predicted.
         :param cell_type: str
@@ -46,12 +47,7 @@ class Seq2SeqBase:
 
     def _build_encoder(self):
         """
-        Build the encoder multilayer RNN (stacked RNN). Return it as a keras.Model
-        :param encoder_inputs: keras.layers.Input
-            shape=(batch_size, input_sequence_length, 1)
-        :return: keras.Model
-            model inputs=encoder_inputs,
-            outputs=encoder_states, i.e. (last) hidden and cell state for each layer [h_i, c_i, h_i-1, c_i-1, ...]
+        Build the encoder multilayer RNN (stacked RNN)
         """
         # Create a list of RNN Cells, these get stacked one after the other in the RNN,
         # implementing an efficient stacked RNN
@@ -137,8 +133,16 @@ class Seq2SeqTF(Seq2SeqBase):
     def build(self, encoder_inputs, decoder_inputs):
         """
         Build a Sequence to Sequence model to be trained via teacher forcing.
-        :param encoder_inputs:
-        :param decoder_inputs:
+        The model takes as inputs:
+            - 3D Tensor of shape (batch_size, input_sequence_length, n_features)
+            - 3D Tensor of shape (batch_size, output_sequence_length, n_features)
+        and outputs:
+            - 3D tensor of shape (batch_size, output_sequence_length, 1)
+
+        :param encoder_inputs: tuple
+            shape=(input_sequence_length, n_features)
+        :param decoder_inputs:tuple
+            shape=(output_sequence_length, n_features)
         """
         encoder_inputs = Input(shape=encoder_inputs, name='encoder_inputs')
         decoder_inputs = Input(shape=decoder_inputs, name='decoder_inputs')
@@ -165,10 +169,15 @@ class Seq2SeqTF(Seq2SeqBase):
     def build_prediction_model(self, decoder_inputs):
         """
         A modified version of the decoder is used for prediction.
-        Inputs = Predicted target inputs and encoded state vectors,
-        Outputs = Predicted target outputs and decoder state vectors.
-        We need to hang onto these state vectors to run the next step of the inference loop.
-        :param decoder_inputs:
+        The model takes as inputs:
+            - 3D Tensor of shape (batch_size, input_sequence_length, n_features)
+            - a 2D Tensor of shape (batch_size, hidden_state) for each layer of the decoder
+        and outputs a list containing:
+            - the prediction: a 3D tensor of shape (batch_size, 1, 1)
+            - a 2D Tensor of shape (batch_size, hidden_state) for each layer of the decoder
+
+        :param decoder_inputs: list
+            Predicted target inputs (np.array (batch_size, 1, n_features))
         :return:
         """
         decoder_inputs = Input(shape=decoder_inputs)
@@ -192,7 +201,7 @@ class Seq2SeqTF(Seq2SeqBase):
         :param pred_steps: int
             number of steps to be predicted in the future
         :param decoder_input_exog: numpy.array
-            Decoder_input (if exogenous variables are given) shape(n_samples, output_sequnece_length, n_features-1).
+            Decoder_input (if exogenous variables are given) shape=(n_samples, output_sequnece_length, n_features-1).
             Important: REMOVE the target variable from this array of values.
         :return: numpy.array
             shape(n_samples, output_sequence_length, 1)
@@ -264,127 +273,10 @@ class Seq2SeqTF(Seq2SeqBase):
         return results
 
 
-class Seq2SeqTFPretr(Seq2SeqBase):
-    """
-    Sequence 2 Sequence model with RNNs encoder-decoder.
-    Training process uses Teacher Forcing, Pretrain encoder then freeze it and train decoder.
-    """
-    def _build_encoder(self):
-        encoder_cells = []
-        for n_hidden_neurons in self.encoder_layers:
-            encoder_cells.append(self.cell(units=n_hidden_neurons,
-                                           dropout=self.dropout,
-                                           kernel_regularizer=l2(self.l2),
-                                           recurrent_regularizer=l2(self.l2)
-                                           ))
-        self.encoder = RNN(encoder_cells, return_state=True, return_sequences=True, name='encoder')
-
-    def pretrain_encoder(self,  encoder_inputs):
-        encoder_inputs = Input(shape=encoder_inputs, name='encoder_inputs')
-        self._build_encoder()
-        encoder_outputs = Dense(1)(self.encoder(encoder_inputs)[0])
-        return Model(encoder_inputs, encoder_outputs)
-
-    def build(self, encoder_inputs, decoder_inputs):
-        """
-        Build a Sequence to Sequence model to be trained via teacher forcing.
-        :param encoder_inputs:
-        :param decoder_inputs:
-        """
-        encoder_inputs = Input(shape=encoder_inputs, name='encoder_inputs')
-        decoder_inputs = Input(shape=decoder_inputs, name='decoder_inputs')
-
-        self._build_decoder()
-        self.decoder_dense = Dense(1)
-
-        self.encoder_states = self.encoder(encoder_inputs)[1:]
-        self.encoder.trainable = False
-        self.encoder_model = Model(inputs=encoder_inputs, outputs=self.encoder_states)
-
-        encoder_states = self._format_encoder_states(self.encoder_states, use_first=False)
-        decoder_outputs = self.decoder(decoder_inputs, initial_state=encoder_states)[0]
-
-        # FC layer after decoder to produce a single real value for each timestamp (univariate time-series prediction)
-        decoder_outputs = self.decoder_dense(decoder_outputs)
-
-        # Full encoder-decoder model
-        self.model = Model(inputs=[encoder_inputs, decoder_inputs], outputs=decoder_outputs, name='train_model')
-        self.model.summary()
-        return self.model
-
-    def build_prediction_model(self, decoder_inputs):
-        """
-        A modified version of the decoder is used for prediction.
-        Inputs = Predicted target inputs and encoded state vectors,
-        Outputs = Predicted target outputs and decoder state vectors.
-        We need to hang onto these state vectors to run the next step of the inference loop.
-        :param decoder_inputs:
-        :return:
-        """
-        decoder_inputs = Input(shape=decoder_inputs)
-        decoder_states_inputs = self._get_decoder_initial_states()
-
-        decoder_outputs = self.decoder(decoder_inputs, initial_state=decoder_states_inputs)
-        decoder_states = decoder_outputs[1:]
-        decoder_outputs = decoder_outputs[0]
-        decoder_outputs = self.decoder_dense(decoder_outputs)
-
-        # Decoder model to be used during inference
-        self.decoder_pred = Model([decoder_inputs] + decoder_states_inputs,
-                                  [decoder_outputs] + decoder_states,
-                                  name='pred_model')
-
-    def predict(self, encoder_inputs, pred_steps, decoder_input_exog=None):
-        """
-        Multi step Inference (1 at a time)
-        :param encoder_inputs: numpy.array
-            Encoder input: shape(n_samples, input_sequnece_length, n_features)
-        :param pred_steps: int
-            number of steps to be predicted in the future
-        :param decoder_input_exog: numpy.array
-            Decoder_input (if exogenous variables are given) shape(n_samples, output_sequnece_length, n_features-1).
-            Important: REMOVE the target variable from this array of values.
-        :return: numpy.array
-            shape(n_samples, output_sequence_length, 1)
-        """
-        # predictions, shape (batch_size, pred_steps, 1)
-        predictions = np.zeros((encoder_inputs.shape[0], pred_steps, 1))
-
-        # produce embeddings with encoder
-        states_value = self.encoder_model.predict(encoder_inputs)  # [h,c](lstm) or [h](gru) each of dim (batch_size, n_hidden)
-
-        # populate the decoder input with the last encoder input
-        decoder_input = np.zeros((encoder_inputs.shape[0], 1, encoder_inputs.shape[-1]))  # decoder input for a single timestep
-        decoder_input[:, 0, 0] = encoder_inputs[:, -1, 0]
-
-        for i in range(pred_steps):
-            if decoder_input_exog is not None:
-                # add exogenous variables if any
-                decoder_input[:, 0, 1:] = decoder_input_exog[:, i, :]
-
-            if isinstance(states_value, list):
-                outputs = self.decoder_pred.predict([decoder_input] + states_value)
-            else:
-                outputs = self.decoder_pred.predict([decoder_input, states_value])
-
-            # prediction at timestep i
-            output = outputs[0]  # output (batch_size, 1, 1)
-            predictions[:, i, 0] = output[:, 0, 0]
-
-            # Update the decoder input with the predicted value (of length 1).
-            decoder_input = np.zeros((encoder_inputs.shape[0], 1, encoder_inputs.shape[-1]))
-            decoder_input[:, 0, 0] = output[:, 0, 0]
-
-            # Update states
-            states_value = outputs[1:] # h, c (both [batch_size, n_hidden]) or just h
-
-        return predictions
-
-
 class Seq2SeqStatic(Seq2SeqBase):
     """
     Sequence 2 Sequence model with RNNs encoder-decoder.
-    Training process without Teacher Forcing. Even during training self-generfated samples are used.
+    Training process without Teacher Forcing. Even during training self-generated samples are used.
     """
 
     def build(self, encoder_inputs, decoder_inputs, decoder_inputs_exog=None):
@@ -393,19 +285,19 @@ class Seq2SeqStatic(Seq2SeqBase):
         (predictions are recursively fed into the decoder's input until a sequence of length 'output_sequence_length'
         is formed).
         :param encoder_inputs: tuple or list
-            [batch_size, input_sequence_length, n_features]
+            (batch_size, input_sequence_length, n_features)
         :param decoder_inputs: tuple or list
-            [batch_size, 1, 1]
+            (batch_size, 1, 1)
+            decoder inputs should not have shape = (batch_size, output_sequence_length, 1)
+            because we want to reinject the last output into the inputs.
         :param decoder_inputs_exog: tuple or list
-            [batch_size, output_sequence_length, n_features - 1]
+            (batch_size, output_sequence_length, n_features - 1)
         """
         encoder_inputs = Input(shape=encoder_inputs, name='encoder_inputs')
         decoder_inputs = Input(shape=decoder_inputs, name='decoder_inputs')
 
         if decoder_inputs_exog is not None:
             decoder_inputs_exog = Input(shape=decoder_inputs_exog, name='decoder_exog')
-            decoder_inputs_with_ex = Lambda(lambda x: x[:, :1, 1:])(decoder_inputs_exog)
-            decoder_inputs_with_ex = Concatenate(axis=-1, name='decoder_inputs_plus_exog')([decoder_inputs, decoder_inputs_with_ex])
 
         self._build_encoder()
         self._build_decoder()
@@ -414,30 +306,33 @@ class Seq2SeqStatic(Seq2SeqBase):
         self.encoder_states = self.encoder(encoder_inputs)[1:]
         encoder_states = self._format_encoder_states(self.encoder_states)
 
-        # decoder inputs should have shape [batch_size, 1, 1] not [batch_size, output_sequence_length, 1]
-        # beacuse we want to reinject the last output into the inputs.
-        decoder_outputs = self.build_static_loop(encoder_states, decoder_inputs)
-
         # Full encoder-decoder model
         if decoder_inputs_exog is None:
+            decoder_outputs = self.build_static_loop(encoder_states, decoder_inputs)
             self.model = Model(inputs=[encoder_inputs, decoder_inputs], outputs=decoder_outputs)
         else:
+            decoder_outputs = self.build_static_loop(encoder_states, decoder_inputs, decoder_inputs_exog=decoder_inputs_exog)
             self.model = Model(inputs=[encoder_inputs, decoder_inputs, decoder_inputs_exog], outputs=decoder_outputs)
         self.model.summary()
         return self.model
 
     def build_static_loop(self, init_states, decoder_inputs, decoder_inputs_exog=None):
         """
-        :param init_states:
+        :param init_states: list
+            list og length = number of layers of encoder/decoder.
+            Each element is a 2D tensor of shape (batch_size, units)
         :param decoder_inputs:
+            3D tensor of shape (batch_size, 1, 1)
         :param decoder_inputs_exog:
+            3D tensor of shape (batch_size, output_sequence_length, n_features - 1)
         :return:
+            3D tensor of shape (batch_size, output_sequence_length, 1)
         """
-        inputs = decoder_inputs  # [batch,1,1]
+        inputs = decoder_inputs
         all_outputs = []
         for i in range(self.output_sequence_length):
             if decoder_inputs_exog is not None:
-                exog_var = Lambda(lambda x: x[:, i:i + 1, 1:])(decoder_inputs_exog)  # [batch,1,features]
+                exog_var = Lambda(lambda x: x[:, i:i + 1, :])(decoder_inputs_exog)  # [batch,1,features]
                 inputs = Concatenate(axis=-1)([inputs, exog_var])
             decoder_outputs = self.decoder(inputs, initial_state=init_states)
             init_states = decoder_outputs[1:] # state update
@@ -450,10 +345,6 @@ class Seq2SeqStatic(Seq2SeqBase):
         return decoder_outputs
 
     def evaluate(self, data, fn_inverse=None, fn_plot=None):
-        """
-        Evaluate model
-        :return:
-        """
         try:
             encoder_inputs, decoder_inputs, decoder_inputs_exog, y = data
             y_hat = self.model.predict([encoder_inputs, decoder_inputs, decoder_inputs_exog])
@@ -483,6 +374,7 @@ class Seq2SeqStatic(Seq2SeqBase):
                 print(m)
                 continue
         return results
+
 
 
 
