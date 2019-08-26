@@ -262,14 +262,10 @@ class Seq2SeqTF(Seq2SeqBase):
 
         results = []
         for m in self.model.metrics:
-            try:
-                if isinstance(m, str):
-                    results.append(K.eval(K.mean(get(m)(y, y_hat))))
-                else:
-                    results.append(K.eval(K.mean(m(y, y_hat))))
-            except:
-                print(m)
-                continue
+            if isinstance(m, str):
+                results.append(K.eval(K.mean(get(m)(y, y_hat))))
+            else:
+                results.append(K.eval(K.mean(m(y, y_hat))))
         return results
 
 
@@ -365,16 +361,11 @@ class Seq2SeqStatic(Seq2SeqBase):
 
         results = []
         for m in self.model.metrics:
-            try:
-                if isinstance(m, str):
-                    results.append(K.eval(K.mean(get(m)(y, y_hat))))
-                else:
-                    results.append(K.eval(K.mean(m(y, y_hat))))
-            except:
-                print(m)
-                continue
+            if isinstance(m, str):
+                results.append(K.eval(K.mean(get(m)(y, y_hat))))
+            else:
+                results.append(K.eval(K.mean(m(y, y_hat))))
         return results
-
 
 
 

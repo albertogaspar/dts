@@ -56,7 +56,7 @@ python FILENAME.py --add_config FULLPATH_TO_YAML_FILE --grid_search
 ```
 
 _grid_search_: defines whether or not you are searching for the best hyperparamters. 
-If True, multiple experiments are runned, each with a different combination of hyperparamters. 
+If True, multiple experiments are run, each with a different combination of hyperparamters. 
 The process terminates when all possible combinations of hyperparamers have been explored. 
 
 _add_config_: The experiment's hyperparamters should be defined as a yaml file in the config folder 
@@ -97,7 +97,7 @@ See [how to format your data](https://github.com/albertogaspar/dts/blob/master/d
 possibilities offered by DTS.
 
 #### Available architectures
-Included architetures are:
+Included architectures are:
 - **Recurrent Neural Networks** (Elmann, LSTM, GRU) with different trainig procedure:
   - [X] _MIMO_: a Dense Network is used to map the last state of the RNN to the output space of size n<sub>O</sub>. 
     The training and inference procedures are the same.
@@ -153,15 +153,15 @@ Included architetures are:
 
 
 ## Project Structure & TODO list
-- **dts**: contains models, utilities and example to train and test differnt deep learning models.
+- **dts**: contains models, utilities and example to train and test different deep learning models.
 - **data**: contains raw data and .npz,.npy data (already preprocessed data). 
 - **config**: yaml file to be used for grid search of hyperparamteres for all architectures.
-- **weights**: conatins models' weights. If you use sacred using the the _artifactID_ field in each document/json file 
+- **weights**: contains models' weights. If you use sacred using the the _artifactID_ field in each document/json file 
 contains the name of the trained model that achieved the related performance. 
 - **log**: If you use sacred without mongodb then all the relevant files are stored in this directory.
 
 #### Sacred Collected Information
-The animation below provides an intutive explanation of the information collected by Sacred (using MongoDB as Observer).
+The animation below provides an intuitive explanation of the information collected by Sacred (using MongoDB as Observer).
 The example refers to a completed experiment of a TCN model trained on the Individual household electric power consumption Data Set 
 (for brevity, 'uci'):
 

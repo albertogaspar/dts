@@ -542,7 +542,7 @@ class TCNModel:
             output = Lambda(lambda x: x[:, -1:])(output)
 
         # build model
-        if conditions_shape is None:
+        if conditions_shape is None or self.tcn_type != 'conditional_tcn':
             model = Model(inputs=[inputs], outputs=[output])
         else:
             model = Model(inputs=[inputs, conditions], outputs=[output])
@@ -613,12 +613,8 @@ class TCNModel:
 
         results = []
         for m in self.model.metrics:
-            try:
-                if isinstance(m, str):
-                    results.append(K.eval(K.mean(get(m)(y, y_hat))))
-                else:
-                    results.append(K.eval(K.mean(m(y, y_hat))))
-            except:
-                print(m)
-                continue
+            if isinstance(m, str):
+                results.append(K.eval(K.mean(get(m)(y, y_hat))))
+            else:
+                results.append(K.eval(K.mean(m(y, y_hat))))
         return results

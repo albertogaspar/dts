@@ -160,7 +160,9 @@ def main(_run):
         logger.warn(txt)
         _run.info['extra'] = txt
     else:
-        val_scores = ffnn.evaluate(history.validation_data[:-1], fn_inverse=fn_inverse_val)
+        # has to add this filter because of unexpected behaviour of history.validation_data when using resent.
+        validation_data = list(filter(lambda x: isinstance(x, np.ndarray), history.validation_data))
+        val_scores = ffnn.evaluate(validation_data[:-1], fn_inverse=fn_inverse_val)
 
     if params['exogenous']:
         test_scores = ffnn.evaluate([[X_test, exog_var_test], y_test], fn_inverse=fn_inverse_test, fn_plot=fn_plot)

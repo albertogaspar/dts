@@ -1,7 +1,7 @@
 train: [False]
 dataset: ['gefcom']
 exogenous: [True, False]
-epochs: [200]
+epochs: [1]
 batch_size: [1024]
 input_sequence_length: [96]
 output_sequence_length:  [24]

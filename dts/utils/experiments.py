@@ -31,8 +31,8 @@ def main_wrapper(f_main, ex, f_ex_capture, curr_db_name, _run):
     db = client[curr_db_name]
     duplicate_ex = check_for_completed_experiment(db, _run.config)
     if duplicate_ex is not None:
-        # raise ValueError('Aborting due to a duplicate experiment')
-        return f_main(ex, _run, f_ex_capture)
+        raise ValueError('Aborting due to a duplicate experiment')
+        # return f_main(ex, _run, f_ex_capture)
     else:
         return f_main(ex, _run, f_ex_capture)
 
