@@ -173,7 +173,7 @@ When MongoDB is used as an Observer, the collected information for an experiment
 In the above documents are visualized using [MongoDB Compass](https://www.mongodb.com/products/compass?lang=it-it) 
 
 ## Reference
-This is the code used for [Deep Learning for Time Series Forecasting: The Electric Load Case](https://arxiv.org/abs/1907.09207).
+This is the code used for the [Deep Learning for Time Series Forecasting: The Electric Load Case](https://arxiv.org/abs/1907.09207) paper.
 Mind that the code has been changed a bit, thus you may notice some differences with the models described in the paper.
 If you encounter any problem or have any doubt don't hesitate to contact me. 
 

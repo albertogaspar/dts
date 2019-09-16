@@ -25,7 +25,11 @@ def f_main(args=None):
             # save the result metrics to db
             _run.info['model_metrics'] = dict(val_loss=val_loss, test_loss=test_loss)
             # save an artifact (keras model) to db
-            ex.add_artifact(model_name)
+            if isinstance(model_name, str):
+                ex.add_artifact(model_name)
+            else:
+                for m in model_name:
+                    ex.add_artifact(m)
             return test_loss
 
         return decorator

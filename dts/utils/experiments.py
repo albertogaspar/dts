@@ -57,7 +57,7 @@ class SacredWrapper():
     Base class for a Sacred Experiment.
     """
     def __init__(self, f_main, f_config, f_capture,
-                 observer_type='file',
+                 observer_type='file', log_dir=None,
                  mongo_url='mongodb://localhost:27017',
                  verbose=False):
         """
@@ -74,6 +74,10 @@ class SacredWrapper():
         :param verbose: bool
             If True logging is enabled
         """
+        if log_dir is not None:
+            self.log_dir = log_dir
+        else:
+            self.log_dir = config['logs']
 
         self.sacred_db_name()
 
@@ -84,7 +88,7 @@ class SacredWrapper():
             print('Connecting to MongoDB at {}:{}'.format(mongo_url, self.sacred_db_name()))
             ex.observers.append(MongoObserver.create(url=mongo_url, db_name=self.sacred_db_name()))
         elif observer_type == 'file':
-            basedir = os.path.join(config['logs'], 'sacred')
+            basedir = os.path.join(self.log_dir, self.sacred_ex_name())
             ex.observers.append(FileStorageObserver.create(basedir))
         else:
             raise ValueError('{} is not a valid type for a SACRED observer.'.format(observer_type))
