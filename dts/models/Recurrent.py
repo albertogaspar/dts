@@ -24,6 +24,7 @@ class RecurrentNN(object):
             see keras.layers.LSTMCell, keras.layers.GRUCell or keras.layers.SimpleRNNCell for more details.
         """
         # init params
+        self.model = None
         self.horizon = None
         self.layers = layers
         self.cell_params = cell_params
@@ -54,6 +55,15 @@ class RecurrentNN(object):
     def evaluate(self, inputs):
         pass
 
+    def _eval(self, y, y_hat):
+        results = []
+        for m in self.model.metrics:
+            if isinstance(m, str):
+                results.append(K.eval(K.mean(get(m)(y, y_hat))))
+            else:
+                results.append(K.eval(K.mean(m(y, y_hat))))
+        return results
+
 
 class RecurrentNN_MIMO(RecurrentNN):
     """
@@ -77,6 +87,8 @@ class RecurrentNN_MIMO(RecurrentNN):
         :return: a keras Model
         """
         self.horizon = horizon
+        if len(input_shape) < 2:
+            input_shape = (input_shape[0], 1)
         inputs = Input(shape=input_shape, dtype='float32', name='input')
         # [batch_size, hidden_state_length]
         out_rnn = self.rnn(inputs)
@@ -124,13 +136,7 @@ class RecurrentNN_MIMO(RecurrentNN):
         if fn_plot is not None:
             fn_plot([y, y_hat])
 
-        results = []
-        for m in self.model.metrics:
-            if isinstance(m, str):
-                results.append(K.eval(K.mean(get(m)(y, y_hat))))
-            else:
-                results.append(K.eval(K.mean(m(y, y_hat))))
-        return results
+        return self._eval(y, y_hat)
 
 
 class RecurrentNN_Rec(RecurrentNN):
@@ -157,6 +163,8 @@ class RecurrentNN_Rec(RecurrentNN):
         :return: a keras Model
         """
         self.horizon = horizon
+        if len(input_shape) < 2:
+            input_shape = (input_shape[0], 1)
         inputs = Input(shape=input_shape, dtype='float32')
         out_rnn = self.rnn(inputs)                    # [batch_size, hidden_state_length]
         outputs = Dense(1, activation=None)(out_rnn)  # [batch_size, 1]
@@ -165,7 +173,7 @@ class RecurrentNN_Rec(RecurrentNN):
         self.model.summary()
         return self.model
 
-    def predict(self, inputs, exogenous):
+    def predict(self, inputs, exogenous=None):
         """
         Perform recursive prediction by feeding the network input at time t+1 with the prediction at
         time t. This is repeted 'horizon' number of time.
@@ -212,10 +220,4 @@ class RecurrentNN_Rec(RecurrentNN):
         if fn_plot is not None:
             fn_plot([y, y_hat])
 
-        results = []
-        for m in self.model.metrics:
-            if isinstance(m, str):
-                results.append(K.eval(K.mean(get(m)(y, y_hat))))
-            else:
-                results.append(K.eval(K.mean(m(y, y_hat))))
-        return results
+        return self._eval(y, y_hat)
