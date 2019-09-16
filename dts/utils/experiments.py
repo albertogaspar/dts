@@ -155,7 +155,7 @@ class DTSExperiment(SacredWrapper):
         return self.ex_name
 
 
-def run_grid_search(experimentclass, db_name, ex_name, f_main, f_metrics, f_config, observer_type):
+def run_grid_search(experimentclass, db_name, ex_name, f_main, f_metrics, f_config, observer_type, log_dir=None):
     """
     Run multiple experiments exploring all the possible combinations of the given hyper-parameters.
     Each combination of parameters is an experiment and they will be stored as separate documents.
@@ -187,11 +187,12 @@ def run_grid_search(experimentclass, db_name, ex_name, f_main, f_metrics, f_conf
             f_main=f_main,
             f_config=_run_params,
             f_metrics=f_metrics,
-            observer_type=observer_type
+            observer_type=observer_type,
+            log_dir=log_dir
         )
 
 
-def run_single_experiment(experimentclass, db_name, ex_name, f_main, f_config, f_metrics, observer_type):
+def run_single_experiment(experimentclass, db_name, ex_name, f_main, f_config, f_metrics, observer_type, log_dir):
     """
     Run a single experiment.
 
@@ -207,5 +208,6 @@ def run_single_experiment(experimentclass, db_name, ex_name, f_main, f_config, f
         f_main=f_main,
         f_config=f_config,
         f_capture=f_metrics,
-        observer_type=observer_type)
+        observer_type=observer_type,
+        log_dir=log_dir)
     experiment.ex.run()
