@@ -77,7 +77,9 @@ class SacredWrapper():
         if log_dir is not None:
             self.log_dir = log_dir
         else:
-            self.log_dir = config['logs']
+            self.log_dir = os.path.join(self.log_dir, self.sacred_ex_name())
+        if not os.path.exists(self.log_dir):
+            os.mkdir(self.log_dir)
 
         self.sacred_db_name()
 
@@ -88,8 +90,7 @@ class SacredWrapper():
             print('Connecting to MongoDB at {}:{}'.format(mongo_url, self.sacred_db_name()))
             ex.observers.append(MongoObserver.create(url=mongo_url, db_name=self.sacred_db_name()))
         elif observer_type == 'file':
-            basedir = os.path.join(self.log_dir, self.sacred_ex_name())
-            ex.observers.append(FileStorageObserver.create(basedir))
+            ex.observers.append(FileStorageObserver.create(self.log_dir))
         else:
             raise ValueError('{} is not a valid type for a SACRED observer.'.format(observer_type))
 
