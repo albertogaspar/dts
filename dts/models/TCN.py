@@ -120,7 +120,7 @@ def wavenet_residual_block(inputs,
     if bias_regularizer is None:
         bias_regularizer = l2(0.001)
 
-    outputs = Conv1D(filters=filters,
+    sig_in = Conv1D(filters=filters,
                      kernel_size=kernel_size,
                      use_bias=use_bias,
                      bias_initializer=bias_initializer,
@@ -129,10 +129,21 @@ def wavenet_residual_block(inputs,
                      kernel_regularizer=kernel_regularizer,
                      padding='causal',
                      dilation_rate=dilation_rate,
-                     activation='relu')(inputs)
-    outputs = SpatialDropout1D(dropout_rate, trainable=True)(outputs)
-    sig_out = Activation('sigmoid')(outputs)
-    tanh_out = Activation('tanh')(outputs)
+                     activation='linear')(inputs)
+    sig_in = SpatialDropout1D(dropout_rate, trainable=True)(sig_in)
+    sig_out = Activation('sigmoid')(sig_in)
+    tanh_in = Conv1D(filters=filters,
+                     kernel_size=kernel_size,
+                     use_bias=use_bias,
+                     bias_initializer=bias_initializer,
+                     bias_regularizer=bias_regularizer,
+                     kernel_initializer=kernel_initializer,
+                     kernel_regularizer=kernel_regularizer,
+                     padding='causal',
+                     dilation_rate=dilation_rate,
+                     activation='linear')(inputs)
+    tanh_in = SpatialDropout1D(dropout_rate, trainable=True)(tanh_in)
+    tanh_out = Activation('tanh')(tanh_in)
     outputs = Multiply()([sig_out, tanh_out])
     skip_out = Conv1D(filters=filters, kernel_size=1, activation='linear')(outputs)
     if K.int_shape(outputs) != K.int_shape(inputs):
