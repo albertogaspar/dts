@@ -1,5 +1,7 @@
 # DTS - Deep Time-Series Forecasting
 
+:warning: :warning: **The library is not actively maintained** :warning: :warning:
+
 DTS is a [Keras](https://keras.io/) library that provides multiple deep architectures aimed at multi-step time-series forecasting.
 
 The [Sacred](https://github.com/IDSIA/sacred) library is used to keep track of different experiments and allow their reproducibility. 
